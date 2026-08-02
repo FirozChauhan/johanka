@@ -184,6 +184,88 @@ export async function uploadFile(creds: StreamtapeCreds, file: Blob, name: strin
   return json.result;
 }
 
+/* ----------------------------------------------------------------------------
+   Library listing (fetch every file in the account)
+---------------------------------------------------------------------------- */
+
+export interface StFile {
+  /** StreamTape file id (also used in the embed URL). */
+  fileid: string;
+  name: string;
+  /** Raw byte size, or null if unknown. */
+  size: number | null;
+  /** Unix timestamp in SECONDS, or null if unknown. */
+  created: number | null;
+}
+
+/*
+  List every file in the account's root folder via /file/listfolder.
+
+  IMPORTANT: do NOT send the `folder` param. Omitting it lists the account
+  root; sending `folder=` (empty) returns `403 Not your folder`. The app
+  uploads everything to the root folder (see lib/ftp.ts), so this covers the
+  whole library. Pagination uses `per_page` + `page`.
+*/
+export async function listFiles(creds: StreamtapeCreds): Promise<StFile[]> {
+  const files: StFile[] = [];
+  const perPage = 100;
+
+  // Failsafe cap: 20 pages x per_page = 2000 files at most.
+  for (let page = 1; page <= 20; page++) {
+    const url = new URL("/file/listfolder", API_BASE);
+    auth(url.searchParams, creds);
+    url.searchParams.set("per_page", String(perPage));
+    url.searchParams.set("page", String(page));
+
+    const res = await stFetch(url.toString());
+    if (!res.ok) {
+      throw new StreamTapeError(
+        `StreamTape returned HTTP ${res.status} ${res.statusText}`,
+        res.status
+      );
+    }
+    const json = (await res.json()) as {
+      status: number;
+      msg?: string;
+      result?: {
+        folders?: Array<{ id: string; name: string }>;
+        files?: Array<{
+          linkid?: string;
+          name?: string;
+          size?: number;
+          created_at?: number;
+          created?: number;
+        }>;
+      };
+    };
+
+    if (json.status !== 200 || !json.result) {
+      throw new StreamTapeError(
+        json.msg || `Could not list files (status ${json.status})`,
+        json.status || 500
+      );
+    }
+
+    const pageFiles = json.result.files ?? [];
+    for (const f of pageFiles) {
+      if (!f.linkid) continue;
+      files.push({
+        fileid: f.linkid,
+        name: f.name || "Untitled",
+        size: typeof f.size === "number" && Number.isFinite(f.size) ? f.size : null,
+        created: f.created_at ?? f.created ?? null,
+      });
+    }
+
+    // Fewer than a full page means we reached the last page.
+    if (pageFiles.length < perPage) break;
+  }
+
+  // Newest first, matching the previous localStorage ordering.
+  files.sort((a, b) => (b.created ?? 0) - (a.created ?? 0));
+  return files;
+}
+
 /** StreamTape's iframe player URL — the simplest free playback route. */
 export function embedUrl(fileid: string): string {
   return `https://streamtape.com/e/${fileid}`;

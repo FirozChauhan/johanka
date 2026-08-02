@@ -95,7 +95,8 @@ export default function UploadPage() {
       setPct(100);
       setStage("storing");
       if (data.video) upsertStoredVideo(data.video);
-      const vid = data.video?.id;
+      // Watch route resolves by StreamTape file id, so land there directly.
+      const vid = data.video?.streamtape_id || data.video?.id;
       router.push(vid ? `/watch/${vid}` : "/");
       router.refresh();
     };

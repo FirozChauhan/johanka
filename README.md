@@ -43,8 +43,10 @@ Browser ──upload──▶ Next.js server ──multipart──▶ StreamTape
 
 - **Storage**: video files live on StreamTape (free tier). We never store the
   video bytes locally — only a poster frame and metadata.
-- **Metadata**: SQLite (`data/app.db`) holds titles, descriptions, durations,
-  StreamTape file ids, and embed URLs.
+- **Library**: the home page lists files straight from your StreamTape account
+  via `file/listfolder` — no local database or localStorage catalog needed.
+  Repeat visits hit a short server-side cache; titles and sizes are derived
+  from each file's metadata on StreamTape.
 - **Playback**: the watch page embeds StreamTape's player via iframe — no
   transcoding infrastructure needed on your side. An optional "Original file"
   button resolves StreamTape's temporary direct mp4 link.
@@ -52,6 +54,8 @@ Browser ──upload──▶ Next.js server ──multipart──▶ StreamTape
 ## Features
 
 - 🎬 **Upload** via drag-and-drop or file picker (mp4, webm, mkv, mov, …)
+- ☁️ **Live library** — everything in your StreamTape account appears automatically;
+  add files anywhere (FTP, the website, another app) and they show up here
 - 🖼️ **Auto posters** — ffmpeg extracts a frame; or supply your own image
 - 📺 **Streaming** through StreamTape's embeddable player
 - 🔎 **Search** videos by title
