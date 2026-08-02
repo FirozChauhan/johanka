@@ -1,0 +1,116 @@
+@import "tailwindcss";
+
+/*
+  Johanka design system — a minimal, clean dark theme.
+
+  Tokens live in @theme so they become Tailwind utilities you can use
+  anywhere (e.g. `bg-surface`, `text-muted`, `border-line`, `text-accent`).
+  Tweak the numbers here to re-skin the whole app.
+*/
+@theme {
+  /* Backgrounds */
+  --color-base: #0a0a0c;      /* page background */
+  --color-surface: #121215;   /* cards / panels */
+  --color-raised: #18181c;    /* hovered cards, dropdowns */
+  --color-sunken: #08080a;    /* player wells / inputs */
+
+  /* Lines */
+  --color-line: #232329;
+  --color-line-soft: #1a1a1f;
+
+  /* Text */
+  --color-fg: #f4f4f5;        /* primary text */
+  --color-muted: #a1a1aa;     /* secondary text */
+  --color-faint: #63636b;     /* tertiary text */
+
+  /* Accent — a calm indigo-violet */
+  --color-accent: #8b7cf6;
+  --color-accent-strong: #a89bff;
+  --color-accent-ink: #14112b;
+
+  /* Brand / semantic */
+  --color-success: #4ade80;
+  --color-danger: #f87171;
+
+  /* Typography */
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+
+  /* Radius */
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
+
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px rgb(0 0 0 / 0.25);
+}
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-base);
+  color: var(--color-fg);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  accent-color: var(--color-accent);
+}
+
+/* Thin custom scrollbar for a cleaner feel */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #2c2c33;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3a3a43;
+  background-clip: content-box;
+}
+
+/* Subtle grid texture for the hero background */
+.bg-noise-grid {
+  background-image:
+    linear-gradient(to right, rgb(255 255 255 / 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.03) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+/* Hide horizontal scrollbars on carousels while keeping scroll */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Animated shimmer for loading placeholders */
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+.shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgb(255 255 255 / 0.06),
+    transparent
+  );
+  animation: shimmer 1.6s infinite;
+}
