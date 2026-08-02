@@ -11,8 +11,11 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@types/pg": "^8.20.3",
     "basic-ftp": "^6.1.0",
+    "cloudinary": "^2.10.0",
     "next": "^15.5.4",
+    "pg": "^8.22.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "undici": "^7.29.0"

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listFiles, embedUrl } from "@/lib/streamtape";
 import type { StreamtapeCreds } from "@/lib/streamtape";
+import { fetchVideosMeta } from "@/lib/db";
+import type { DbVideoMeta } from "@/lib/db";
 import { formatBytes, stripExt } from "@/lib/format";
 import type { Video } from "@/lib/types";
 
@@ -31,7 +33,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ configured: false, videos: [], error: "Not configured" });
   }
 
-  const cacheKey = `${creds.streamtape_login}:${creds.streamtape_key}`;
+  // Optional Postgres enrichment (env vars win over the /settings value).
+  const postgresDsn =
+    process.env.DATABASE_URL ||
+    process.env.POSTGRES_URL ||
+    (searchParams.get("postgres") ?? "").trim() ||
+    undefined;
+
+  const cacheKey = `${creds.streamtape_login}:${creds.streamtape_key}:${postgresDsn ?? ""}`;
   const hit = cache.get(cacheKey);
   if (hit && Date.now() - hit.at < CACHE_TTL_MS) {
     return NextResponse.json({ configured: true, videos: hit.videos, cached: true });
@@ -39,20 +48,39 @@ export async function GET(req: NextRequest) {
 
   try {
     const files = await listFiles(creds);
-    const videos: Video[] = files.map((f) => ({
-      id: f.fileid,
-      streamtape_id: f.fileid,
-      title: prettyTitle(f.name),
-      description: null,
-      filename: f.name,
-      size: f.size != null ? formatBytes(f.size) : null,
-      duration: null,
-      thumbnail: null,
-      status: "ready",
-      embed_url: embedUrl(f.fileid),
-      direct_url: null,
-      created_at: f.created ? f.created * 1000 : Date.now(),
-    }));
+
+    // Attach enriched metadata (posters, custom titles, durations) keyed by
+    // StreamTape file id when a database is configured. Degrades to a raw
+    // listing otherwise.
+    let meta: Map<string, DbVideoMeta> | null = null;
+    if (postgresDsn) {
+      try {
+        meta = await fetchVideosMeta(postgresDsn, files.map((f) => f.fileid));
+      } catch (err) {
+        console.warn(
+          "[files] Postgres enrichment unavailable — continuing with the raw listing:",
+          (err as Error).message
+        );
+      }
+    }
+
+    const videos: Video[] = files.map((f) => {
+      const m = meta?.get(f.fileid);
+      return {
+        id: f.fileid,
+        streamtape_id: f.fileid,
+        title: m?.title?.trim() || prettyTitle(f.name),
+        description: m?.description ?? null,
+        filename: f.name,
+        size: f.size != null ? formatBytes(f.size) : null,
+        duration: m?.duration_secs ?? null,
+        thumbnail: m?.poster_url ?? null,
+        status: "ready",
+        embed_url: embedUrl(f.fileid),
+        direct_url: null,
+        created_at: f.created ? f.created * 1000 : Date.now(),
+      };
+    });
 
     cache.set(cacheKey, { at: Date.now(), videos });
     return NextResponse.json({ configured: true, videos, cached: false });

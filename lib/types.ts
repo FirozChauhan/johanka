@@ -26,10 +26,16 @@ export interface Video {
   created_at: number;
 }
 
-/** App-level settings stored in the database (see lib/settings.ts). */
+/** App-level settings stored in the browser (and mirrored via env on the server). */
 export interface AppSettings {
   streamtape_login?: string;
   streamtape_key?: string;
+  /** Cloudinary cloud name / public cloud id. */
+  cloudinary_cloud_name?: string;
+  cloudinary_api_key?: string;
+  cloudinary_api_secret?: string;
+  /** Optional PostgreSQL connection string for catalog enrichment. */
+  postgres_connection_string?: string;
 }
 
 export interface VideoDraft {

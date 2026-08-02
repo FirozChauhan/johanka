@@ -11,6 +11,9 @@ import { generateThumbnail, saveThumbnailImage, probeDuration } from "@/lib/ffmp
 import { formatBytes, clampUsername, stripExt } from "@/lib/format";
 import { boundaryFrom, parseMultipartStream } from "@/lib/multipart";
 import type { ParsedUpload } from "@/lib/multipart";
+import { resolveSettings } from "@/lib/settings";
+import { cloudinaryConfigured, uploadPoster } from "@/lib/cloudinary";
+import { upsertVideo } from "@/lib/db";
 
 /*
   POST /api/upload — uploads a video to StreamTape via FTP and auto-generates
@@ -51,9 +54,21 @@ export async function POST(req: NextRequest) {
 
     const { fields, file: videoFile, thumbnail } = parsed;
 
+    // Resolve StreamTape + optional Cloudinary/PostgreSQL settings. Env vars
+    // override whatever the browser sent from /settings, so production can
+    // lock credentials down (see .env.example).
+    const settings = resolveSettings({
+      streamtape_login: fields.login,
+      streamtape_key: fields.key,
+      cloudinary_cloud_name: fields.cloudinary_cloud_name,
+      cloudinary_api_key: fields.cloudinary_api_key,
+      cloudinary_api_secret: fields.cloudinary_api_secret,
+      postgres_connection_string: fields.postgres,
+    });
+
     const creds: StreamtapeCreds = {
-      streamtape_login: (fields.login || "").trim(),
-      streamtape_key: (fields.key || "").trim(),
+      streamtape_login: settings.streamtape_login,
+      streamtape_key: settings.streamtape_key,
     };
 
     if (!creds.streamtape_login || !creds.streamtape_key) {
@@ -94,9 +109,64 @@ export async function POST(req: NextRequest) {
     if (!embed) {
       console.warn("[upload] file uploaded via FTP but no file id resolved:", uploaded.remoteName);
     }
-    console.log("[upload] done — thumbnail:", thumbnailUrl, "| embed:", embed, "| duration:", duration);
 
-    // 3. Return the video object; the client persists it to localStorage.
+    // 3. Optional: push the poster to Cloudinary and keep a stable hosted URL.
+    //    The frame stays on disk too, so we degrade to /thumbs/... if
+    //    Cloudinary isn't configured or hiccups.
+    let posterUrl = thumbnailUrl;
+    let posterPublicId: string | null = null;
+    if (thumbnailUrl && uploaded.fileid && cloudinaryConfigured(settings)) {
+      try {
+        const localPath = path.join(process.cwd(), "public", thumbnailUrl);
+        if (fs.existsSync(localPath)) {
+          const bytes = fs.readFileSync(localPath);
+          const up = await uploadPoster(
+            {
+              cloudName: settings.cloudinaryCloudName,
+              apiKey: settings.cloudinaryApiKey,
+              apiSecret: settings.cloudinaryApiSecret,
+            },
+            bytes,
+            uploaded.fileid
+          );
+          posterUrl = up.url;
+          posterPublicId = up.publicId;
+          console.log("[upload] poster uploaded to Cloudinary:", up.url);
+        }
+      } catch (err) {
+        console.warn(
+          "[upload] Cloudinary poster upload failed; keeping the local thumbnail:",
+          (err as Error).message
+        );
+      }
+    }
+
+    // 4. Optional: enrich the catalog in Postgres, keyed by StreamTape file id.
+    if (settings.postgresConnectionString && uploaded.fileid) {
+      try {
+        await upsertVideo(settings.postgresConnectionString, {
+          streamtape_id: uploaded.fileid,
+          title,
+          description,
+          filename: safeName,
+          size_bytes: videoFile.size,
+          duration_secs: duration ? Math.round(duration) : null,
+          poster_url: posterUrl,
+          poster_public_id: posterPublicId,
+        });
+        console.log("[upload] catalog row upserted for", uploaded.fileid);
+      } catch (err) {
+        console.warn(
+          "[upload] Postgres upsert failed (continuing without enrichment):",
+          (err as Error).message
+        );
+      }
+    }
+
+    console.log("[upload] done — poster:", posterUrl, "| embed:", embed, "| duration:", duration);
+
+    // 5. Return the video object; the client keeps a localStorage copy as a
+    //    fallback catalog when no backend enrichment is configured.
     const video = {
       id,
       streamtape_id: uploaded.fileid,
@@ -105,7 +175,7 @@ export async function POST(req: NextRequest) {
       filename: safeName,
       size: formatBytes(videoFile.size),
       duration,
-      thumbnail: thumbnailUrl,
+      thumbnail: posterUrl,
       status: "ready" as const,
       embed_url: embed,
       direct_url: null,

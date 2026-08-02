@@ -4,9 +4,11 @@ import type { Video } from "./types";
 /** Credential query string for the stateless API routes. */
 export function credsQuery(): string {
   const s = getStoredSettings();
-  return `login=${encodeURIComponent(s.streamtape_login || "")}&key=${encodeURIComponent(
-    s.streamtape_key || ""
-  )}`;
+  const p = new URLSearchParams();
+  p.set("login", s.streamtape_login || "");
+  p.set("key", s.streamtape_key || "");
+  p.set("postgres", s.postgres_connection_string || "");
+  return p.toString();
 }
 
 /**

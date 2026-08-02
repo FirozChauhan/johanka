@@ -265,7 +265,7 @@ ffmpeg. Storage & streaming powered by the StreamTape API.
    **API/FTP Password** (StreamTape uses one username + password for both FTP
    and its API; the API refers to them as `login` and `key`).
 3. Add them **either**:
-   - in the app at **`/settings`** (stored in SQLite, editable at runtime), **or**
+   - in the app at **`/settings`** (stored in the browser, editable at runtime), **or**
    - via environment variables (recommended for production):
 
      ```bash
@@ -277,3 +277,24 @@ ffmpeg. Storage & streaming powered by the StreamTape API.
 Env vars take precedence over anything saved in the UI, so you can lock
 credentials down in production while still having a convenient settings page
 in dev.
+
+---
+
+## Cloudinary posters & PostgreSQL catalog (optional)
+
+Without any extra setup the library already mirrors everything in your
+StreamTape account. Two optional integrations make posters and metadata stick:
+
+- **Cloudinary** (`CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`,
+  `CLOUDINARY_API_SECRET`) — the ffmpeg poster frame generated at upload time
+  is pushed to Cloudinary and referenced by a stable hosted URL, so cards keep
+  real thumbnails even after the local `/thumbs` dir is wiped by a redeploy.
+- **PostgreSQL** (`DATABASE_URL`) — stores enriched metadata (posters,
+  descriptions, durations, custom titles) keyed by StreamTape file id. The
+  `videos` table is created automatically on first use and merges with the raw
+  StreamTape listing on every page load.
+
+Both can be configured at runtime in **/settings** (stored in the browser and
+forwarded with each request) or via env vars in production — env vars always
+win. Everything degrades gracefully: no Cloudinary → thumbnails stay on the
+local `/thumbs` dir; no PostgreSQL → the raw StreamTape listing is used.
