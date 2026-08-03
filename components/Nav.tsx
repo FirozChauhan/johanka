@@ -1,14 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
 import {
   HomeIcon,
   UploadIcon,
   SettingsIcon,
   SearchIcon,
   MenuIcon,
+  XIcon,
 } from "./icons";
 import { useAuth } from "@/lib/use-auth";
 
@@ -37,16 +38,59 @@ function isActive(pathname: string, href: string) {
   return href === "/" ? pathname === "/" : pathname.startsWith(href);
 }
 
-export function TopBar() {
+/* The search box keeps its input bound to the ?q= URL param (the source of
+   truth), so it stays in sync with the results page: it reflects the query on
+   load / navigation, and clears when the filter is removed. Without this the
+   box would show stale or empty values while the page was already filtered. */
+function SearchInput() {
   const router = useRouter();
-  const [query, setQuery] = useState("");
-  const [open, setOpen] = useState(false);
+  const searchParams = useSearchParams();
+  const currentQ = (searchParams.get("q") ?? "").trim();
+  const [draft, setDraft] = useState(currentQ);
 
-  function submitSearch(e: React.FormEvent) {
+  // Mirror the URL query into the box whenever it changes — search, clear,
+  // forward/back, or a shared link with ?q= already set.
+  useEffect(() => {
+    setDraft(currentQ);
+  }, [currentQ]);
+
+  function submit(e: React.FormEvent) {
     e.preventDefault();
-    const q = query.trim();
+    const q = draft.trim();
     router.push(q ? `/?q=${encodeURIComponent(q)}` : "/");
   }
+
+  function clear() {
+    setDraft("");
+    if (currentQ) router.push("/");
+  }
+
+  return (
+    <form onSubmit={submit} className="relative w-full">
+      <SearchIcon className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-faint" />
+      <input
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        placeholder="Search videos…"
+        aria-label="Search videos"
+        className="h-9 w-full border border-line bg-sunken pl-9 pr-16 text-sm text-fg outline-none transition placeholder:text-faint hover:border-fg/25 focus:border-accent/40 focus:ring-2 focus:ring-accent/10 focus-visible:outline-none"
+      />
+      {draft && (
+        <button
+          type="button"
+          onClick={clear}
+          aria-label="Clear search"
+          className="absolute right-1.5 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center text-faint transition hover:text-fg"
+        >
+          <XIcon className="h-3.5 w-3.5" />
+        </button>
+      )}
+    </form>
+  );
+}
+
+export function TopBar() {
+  const [open, setOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-base/90 backdrop-blur-xl">
@@ -59,17 +103,11 @@ export function TopBar() {
           Johanka
         </Link>
 
-        <form onSubmit={submitSearch} className="ml-auto hidden items-center md:flex">
-          <div className="relative">
-            <SearchIcon className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-faint" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search videos…"
-              className="h-9 w-64 rounded-md border border-line bg-sunken pl-9 pr-3 text-sm outline-none transition placeholder:text-faint focus:border-accent/60 focus:ring-2 focus:ring-accent/20"
-            />
-          </div>
-        </form>
+        <div className="ml-auto hidden w-64 md:block">
+          <Suspense fallback={null}>
+            <SearchInput />
+          </Suspense>
+        </div>
 
         <UserMenu />
 
@@ -89,15 +127,11 @@ export function TopBar() {
             {NAV_ITEMS.map(({ href, label, Icon }) => (
               <MobileLink key={href} href={href} label={label} Icon={Icon} onNavigate={() => setOpen(false)} />
             ))}
-            <form onSubmit={submitSearch} className="relative mt-2">
-              <SearchIcon className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-faint" />
-              <input
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search videos…"
-                className="h-9 w-full rounded-md border border-line bg-sunken pl-9 pr-3 text-sm outline-none placeholder:text-faint focus:border-accent/60"
-              />
-            </form>
+            <div className="mt-2">
+              <Suspense fallback={null}>
+                <SearchInput />
+              </Suspense>
+            </div>
           </div>
         </div>
       )}
