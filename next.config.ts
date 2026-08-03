@@ -53,8 +53,9 @@ const nextConfig: NextConfig = {
   output: "standalone",
   // Keep native/server-only deps external so the standalone tracer includes
   // them. basic-ftp opens raw TCP sockets for FTP uploads and must not be
-  // bundled into the server chunk.
-  serverExternalPackages: ["basic-ftp", "undici"],
+  // bundled into the server chunk; firebase-admin resolves service-account
+  // credentials at runtime and must stay external too.
+  serverExternalPackages: ["basic-ftp", "undici", "firebase-admin"],
   env: {
     NEXT_PUBLIC_APP_VERSION: currentVersion(),
   },

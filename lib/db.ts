@@ -234,3 +234,92 @@ export async function setAdminKeySha(
     [shaHex]
   );
 }
+
+/* --------------------------------- Users --------------------------------- */
+
+export interface DbUser {
+  uid: string;
+  email: string | null;
+  display_name: string | null;
+  photo_url: string | null;
+  provider: string;
+  created_at: number;
+  last_login_at: number;
+}
+
+export async function ensureUsersTable(pool: Pool): Promise<void> {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      uid           TEXT PRIMARY KEY,
+      email         TEXT,
+      display_name  TEXT,
+      photo_url     TEXT,
+      provider      TEXT,
+      created_at    BIGINT,
+      last_login_at BIGINT,
+      updated_at    BIGINT
+    );
+  `);
+}
+
+/**
+ * Create (or update on re-login) a Google-authenticated user. The uid is the
+ * Firebase Auth user id, which is stable and globally unique.
+ */
+export async function upsertUser(
+  connectionString: string,
+  user: {
+    uid: string;
+    email?: string | null;
+    displayName?: string | null;
+    photoURL?: string | null;
+    provider?: string;
+  }
+): Promise<void> {
+  const pool = getPool(connectionString);
+  await ensureUsersTable(pool);
+  const now = Date.now();
+  await pool.query(
+    `INSERT INTO users
+       (uid, email, display_name, photo_url, provider, created_at, last_login_at, updated_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+     ON CONFLICT (uid) DO UPDATE SET
+       email         = EXCLUDED.email,
+       display_name  = EXCLUDED.display_name,
+       photo_url     = EXCLUDED.photo_url,
+       provider      = EXCLUDED.provider,
+       last_login_at = EXCLUDED.last_login_at,
+       updated_at    = EXCLUDED.updated_at`,
+    [
+      user.uid,
+      user.email ?? null,
+      user.displayName ?? null,
+      user.photoURL ?? null,
+      user.provider ?? "google",
+      now,
+      now,
+      now,
+    ]
+  );
+}
+
+export async function getUserByUid(
+  connectionString: string,
+  uid: string
+): Promise<DbUser | null> {
+  const pool = getPool(connectionString);
+  await ensureUsersTable(pool);
+  const res = await pool.query(`SELECT * FROM users WHERE uid = $1`, [uid]);
+  const r = res.rows[0];
+  if (!r) return null;
+  return {
+    uid: r.uid,
+    email: r.email ?? null,
+    display_name: r.display_name ?? null,
+    photo_url: r.photo_url ?? null,
+    provider: r.provider ?? "google",
+    created_at: Number(r.created_at),
+    last_login_at: Number(r.last_login_at),
+  };
+}
+

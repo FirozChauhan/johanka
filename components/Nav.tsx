@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   HomeIcon,
   UploadIcon,
@@ -10,6 +10,7 @@ import {
   SearchIcon,
   MenuIcon,
 } from "./icons";
+import { useAuth } from "@/lib/use-auth";
 
 /* Render-style dashboard shell: a slim top bar + a left sidebar for navigation. */
 
@@ -49,7 +50,7 @@ export function TopBar() {
 
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-base/90 backdrop-blur-xl">
-      <div className="mx-auto flex h-14 max-w-[1440px] items-center gap-3 px-4">
+      <div className="mx-auto flex h-14 max-w-[1440px] items-center gap-2 px-4 sm:gap-3">
         {/* Johanka text logo */}
         <Link
           href="/"
@@ -70,9 +71,11 @@ export function TopBar() {
           </div>
         </form>
 
+        <UserMenu />
+
         <button
           onClick={() => setOpen((v) => !v)}
-          className="ml-auto rounded-md p-2 text-muted hover:text-fg md:hidden"
+          className="rounded-md p-2 text-muted hover:text-fg md:hidden"
           aria-label="Menu"
         >
           <MenuIcon className="h-5 w-5" />
@@ -99,6 +102,76 @@ export function TopBar() {
         </div>
       )}
     </header>
+  );
+}
+
+/*
+  Signed-in / guest identity chip in the top bar with a small account menu
+  (email + sign out). Hidden while the session is still resolving.
+*/
+function UserMenu() {
+  const { user, signOut } = useAuth();
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  // Close the menu on outside click.
+  useEffect(() => {
+    if (!open) return;
+    function onDown(e: MouseEvent) {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [open]);
+
+  if (!user) return null;
+
+  const label = user.guest ? "Guest" : user.displayName || user.email || "Account";
+  const initial = (label.charAt(0) || "?").toUpperCase();
+
+  return (
+    <div className="relative" ref={rootRef}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-2 rounded-md border border-line bg-surface px-1.5 py-1 text-sm text-fg transition hover:border-accent/40"
+        aria-label="Account menu"
+      >
+        {user.photoURL ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={user.photoURL} alt="" className="h-6 w-6 rounded-full object-cover" />
+        ) : (
+          <span className="grid h-6 w-6 place-items-center rounded-full bg-accent text-xs font-semibold text-white">
+            {initial}
+          </span>
+        )}
+        <span className="hidden max-w-[110px] truncate sm:inline">{label}</span>
+      </button>
+
+      {open && (
+        <div className="absolute right-0 mt-2 w-60 rounded-md border border-line bg-surface p-1 shadow-card">
+          <div className="border-b border-line px-3 py-2.5">
+            <p className="truncate text-sm font-medium text-fg">{label}</p>
+            {user.email && (
+              <p className="mt-0.5 truncate text-xs text-faint">{user.email}</p>
+            )}
+            <p className="mt-1.5 text-[10px] font-semibold uppercase tracking-widest text-faint">
+              {user.guest ? "Guest session" : "Signed in with Google"}
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              setOpen(false);
+              signOut();
+            }}
+            className="mt-1 w-full rounded-md px-3 py-2 text-left text-sm text-muted transition hover:bg-sunken hover:text-fg"
+          >
+            Sign out
+          </button>
+        </div>
+      )}
+    </div>
   );
 }
 

@@ -69,6 +69,8 @@ Browser ──upload──▶ Next.js server ──multipart──▶ StreamTape
 - 🩺 **Health check** that validates credentials against StreamTape's API
 - 🎨 **Minimal dark UI** — Inter font, custom design tokens, no UI kit bloat
 - 🐳 **Docker-ready** with a standalone Next.js image
+- 🔐 **Google sign-in (Firebase)** with users stored in PostgreSQL, plus a
+  frictionless **"continue as guest"** that skips auth entirely
 
 ---
 
@@ -338,6 +340,66 @@ watch page only appear once the operator has unlocked `/settings` in that tab.
 > the streaming service, matching "accessible by anyone"). Anybody can upload
 > to your StreamTape account and use its quota. If you'd rather keep uploads
 > operator-only, say the word and I'll gate it behind the same admin key.
+
+## Google sign-in (Firebase)
+
+The app can gate itself behind Google authentication, backed by PostgreSQL for
+user storage — with a **"continue as guest"** option so visitors never *have* to
+sign in.
+
+### What you get
+
+- **Sign-in screen** — anonymous visitors see a clean prompt with a
+  **Continue with Google** button and a **Continue as guest** bypass.
+- **Users in PostgreSQL** — each Google sign-in upserts a row into a `users`
+  table (uid, email, display name, photo, provider, timestamps) created
+  automatically on first use.
+- **Secure sessions** — the browser completes Google OAuth with the Firebase
+  JS SDK, sends the ID token to the server, which verifies it with the
+  **Firebase Admin SDK** and mints a signed, HTTP-only session cookie. Guests
+  get a plain guest cookie and are **never** written to the database.
+- **Contextual UI** — the top bar shows a user/guest chip (avatar or initials)
+  with a sign-out menu. The app remembers a chosen guest session.
+
+### 1. Create a Firebase project (Console)
+
+1. Go to <https://console.firebase.google.com> → **Add project**.
+2. **Authentication → Get started → Sign-in method → Google → Enable** (add your
+   domain to the authorized domains).
+3. **Project settings → General → Your apps → Web** to register a web app and
+   copy its **Web API key**, **Auth domain** (`<project>.firebaseapp.com`) and
+   **Project ID**.
+4. **Project settings → Service accounts → Generate new private key** — this
+   downloads a JSON service account. Copy `project_id`, `client_email` and
+   `private_key` from it.
+
+### 2. Configure Johanka
+
+```bash
+# Client (NEXT_PUBLIC_* — rendered into the browser)
+NEXT_PUBLIC_FIREBASE_API_KEY=AIza...
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=johanka-example.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=johanka-example
+
+# Server (never exposed — used to verify tokens + mint session cookies)
+FIREBASE_PROJECT_ID=johanka-example
+FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@johanka-example.iam.gserviceaccount.com
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\nMIIE...\n-----END PRIVATE KEY-----\n"
+```
+
+- Add these to `.env` for local dev and to `docker-compose.yml` / Render for
+  production (they're already wired into `docker-compose.yml`).
+- Set `DATABASE_URL` so authenticated users are persisted. Auth still works
+  without it (sessions verify against Firebase), it just won't store rows.
+- **Leave all Firebase vars blank to disable sign-in** — visitors automatically
+  become guests and the Google button is hidden.
+
+> **Note on trust:** the ID-token → session flow always starts from Firebase's
+> own login page, so we only ever accept tokens Firebase signed. Guests have no
+> account and their data (history, etc.) stays entirely client-side.
+
+---
+
 
 ---
 

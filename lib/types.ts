@@ -50,3 +50,20 @@ export interface UploadOutcome {
   embedUrl: string;
   filename: string;
 }
+
+/**
+ * A signed-in user, as seen by the client. `guest` marks a skipped-auth
+ * visit that is NOT persisted to the database.
+ */
+export interface AuthUser {
+  uid: string;
+  email: string | null;
+  displayName: string | null;
+  photoURL: string | null;
+  provider: string;
+  /** True when the visitor chose "continue as guest" and has no account. */
+  guest?: boolean;
+  /** Random id assigned to a guest visit. */
+  guestId?: string;
+}
+
