@@ -9,7 +9,7 @@ import type { Video } from "@/lib/types";
 import { Player } from "@/components/Player";
 import { WatchActions } from "@/components/WatchActions";
 import { VideoGrid } from "@/components/VideoGrid";
-import { Thumb } from "@/components/Thumb";
+import { VideoCard } from "@/components/VideoCard";
 import { FileIcon, ClockIcon, HomeIcon } from "@/components/icons";
 import { formatDuration, timeAgo } from "@/lib/format";
 
@@ -69,7 +69,7 @@ export default function WatchPage() {
 
   return (
     <div>
-      <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
+      <div className="grid items-start gap-8 lg:grid-cols-[1fr_340px]">
         <div className="min-w-0">
           <Player video={video} />
           <h1 className="mt-6 text-xl font-semibold tracking-tight sm:text-2xl">{video.title}</h1>
@@ -89,22 +89,9 @@ export default function WatchPage() {
         <aside className="hidden lg:block">
           <h3 className="mb-4 text-base font-semibold tracking-tight">More to watch</h3>
           {related.length > 0 ? (
-            <div className="space-y-4">
+            <div className="space-y-6">
               {related.map((v) => (
-                <Link key={v.id} href={`/watch/${v.id}`} className="group flex gap-3">
-                  <div className="relative aspect-video w-40 flex-none overflow-hidden bg-sunken ring-1 ring-line">
-                    <Thumb
-                      src={v.thumbnail}
-                      seed={v.id}
-                      className="h-full w-full"
-                      imgClassName="h-full w-full object-cover"
-                    />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="line-clamp-2 text-sm font-medium leading-snug group-hover:text-accent-strong">{v.title}</p>
-                    <p className="mt-1 text-xs text-faint">{formatDuration(v.duration)}</p>
-                  </div>
-                </Link>
+                <VideoCard key={v.id} video={v} />
               ))}
             </div>
           ) : (
