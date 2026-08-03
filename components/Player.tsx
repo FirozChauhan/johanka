@@ -17,7 +17,7 @@ export function Player({ video }: { video: Video }) {
   // dimmed placeholder WITHOUT a misleading play button.
   if (!video.embed_url) {
     return (
-      <div className="relative aspect-video w-full overflow-hidden rounded-md bg-black ring-1 ring-line">
+      <div className="relative aspect-video w-full overflow-hidden bg-black ring-1 ring-line">
         <Thumb
           src={video.thumbnail}
           seed={video.id}
@@ -32,7 +32,7 @@ export function Player({ video }: { video: Video }) {
   }
 
   return (
-    <div className="relative aspect-video w-full overflow-hidden rounded-md bg-black ring-1 ring-line">
+    <div className="relative aspect-video w-full overflow-hidden bg-black ring-1 ring-line">
       {/* Embedded player is the base layer. */}
       <iframe
         src={video.embed_url}

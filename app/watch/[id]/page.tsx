@@ -92,7 +92,7 @@ export default function WatchPage() {
             <div className="space-y-4">
               {related.map((v) => (
                 <Link key={v.id} href={`/watch/${v.id}`} className="group flex gap-3">
-                  <div className="relative aspect-video w-40 flex-none overflow-hidden rounded-md bg-sunken ring-1 ring-line">
+                  <div className="relative aspect-video w-40 flex-none overflow-hidden bg-sunken ring-1 ring-line">
                     <Thumb
                       src={v.thumbnail}
                       seed={v.id}

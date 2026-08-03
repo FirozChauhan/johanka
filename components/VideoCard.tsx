@@ -18,7 +18,7 @@ export function VideoCard({ video }: { video: Video }) {
       className="group block focus:outline-none"
       aria-label={`Watch ${video.title}`}
     >
-      <div className="relative aspect-video overflow-hidden rounded-lg bg-sunken ring-1 ring-line transition group-hover:ring-accent/40">
+      <div className="relative aspect-video overflow-hidden bg-sunken ring-1 ring-line transition group-hover:ring-accent/40">
         <Thumb
           src={video.thumbnail}
           seed={video.id}
@@ -28,7 +28,7 @@ export function VideoCard({ video }: { video: Video }) {
 
         {/* duration badge */}
         {video.duration ? (
-          <span className="absolute right-2 bottom-2 flex items-center gap-1 rounded bg-black/70 px-1.5 py-0.5 text-[11px] font-medium text-white backdrop-blur">
+          <span className="absolute right-2 bottom-2 flex items-center gap-1 bg-black/70 px-1.5 py-0.5 text-[11px] font-medium text-white backdrop-blur">
             <ClockIcon className="h-3 w-3" />
             {dur}
           </span>
