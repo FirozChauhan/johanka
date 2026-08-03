@@ -51,6 +51,11 @@
 
 html {
   color-scheme: dark;
+  /* Reserve scrollbar space at all times so the layout width (and thus any
+     centered content) never shifts when navigating between a short page with
+     no scrollbar and a tall page with one. */
+  scrollbar-gutter: stable;
+  overflow-y: scroll;
 }
 
 body {
