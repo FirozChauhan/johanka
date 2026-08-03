@@ -14,10 +14,14 @@ export const metadata: Metadata = {
 
 /* A thin brand strip: "Johanka" on the left, "FIROZ" on the right. */
 function BrandBar({ edge }: { edge: "top" | "bottom" }) {
+  const bar =
+    "flex h-9 items-center justify-between px-4 text-xs sm:px-6";
   return (
     <div
-      className={`flex h-9 items-center justify-between px-4 text-xs sm:px-6 ${
-        edge === "top" ? "border-b border-line" : "border-t border-line"
+      className={`${bar} ${
+        edge === "top"
+          ? "border-b border-line"
+          : "sticky bottom-0 z-40 border-t border-line bg-base/95 backdrop-blur-xl"
       }`}
     >
       <Link
@@ -46,7 +50,7 @@ export default function RootLayout({
           <TopBar />
           <div className="mx-auto flex w-full max-w-[1440px] flex-1">
             <Sidebar />
-            <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 md:px-8 md:py-8">
+            <main className="min-w-0 flex-1 px-4 pb-24 pt-6 sm:px-6 md:px-8 md:pt-8">
               {children}
             </main>
           </div>

@@ -14,9 +14,9 @@
   --color-raised: #1a1d21;    /* hovered cards, dropdowns */
   --color-sunken: #0e1013;    /* player wells / inputs */
 
-  /* Lines — brighter, like Render's visible hairlines */
-  --color-line: #343a44;
-  --color-line-soft: #242a32;
+  /* Lines — bright white hairlines, like Render */
+  --color-line: rgb(255 255 255 / 0.22);
+  --color-line-soft: rgb(255 255 255 / 0.13);
 
   /* Text */
   --color-fg: #f1f2f4;        /* primary text */
