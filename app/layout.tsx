@@ -1,12 +1,17 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
-import { Inter } from "next/font/google";
+import { Inter, Aref_Ruqaa_Ink } from "next/font/google";
 import "./globals.css";
 import { TopBar, Sidebar } from "@/components/Nav";
 import { AuthProvider } from "@/lib/use-auth";
 import { AuthGate } from "@/components/AuthGate";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
+const arefRuqaaInk = Aref_Ruqaa_Ink({
+  subsets: ["arabic"],
+  weight: "700",
+  variable: "--font-aref-ruqaa",
+});
 
 const APP_NAME = "Johanka";
 
@@ -38,26 +43,30 @@ export const viewport: Viewport = {
   colorScheme: "dark",
 };
 
-/* A thin footer strip: "Johanka" on the left, "FIROZ" on the right. */
+/* A thin footer strip: "Johanka" on the left, the name in Aref Ruqaa Ink on the right. */
 function FooterBar() {
   const version = process.env.NEXT_PUBLIC_APP_VERSION || "";
   return (
-    <div className="sticky bottom-0 z-40 border-t border-line bg-base/95 backdrop-blur-xl">
-      <div className="mx-auto flex h-9 max-w-[1440px] items-center justify-between px-4 text-xs">
+    <footer className="sticky bottom-0 z-40 border-t border-line bg-base/95 backdrop-blur-xl">
+      <div className="mx-auto flex max-w-[1440px] flex-col items-center justify-between gap-2 px-4 py-4 sm:flex-row sm:items-center sm:px-6 md:px-8">
         <Link
           href="/"
-          className="inline-flex items-baseline gap-1.5 font-semibold tracking-tight text-fg transition hover:text-accent"
+          className="inline-flex items-center gap-1.5 text-sm font-semibold tracking-tight text-fg transition hover:text-accent"
         >
           Johanka
           {version && (
             <span className="font-normal text-faint">v{version.replace(/^v/i, "")}</span>
           )}
         </Link>
-        <span className="font-semibold uppercase tracking-[0.25em] text-muted">
-          Firoz
+
+        <span
+          dir="rtl"
+          className="-translate-y-2 bg-gradient-to-r from-fg via-fg to-accent bg-clip-text font-aref-ruqaa text-2xl leading-tight text-transparent sm:text-[28px]"
+        >
+          فیروز خان چوہان
         </span>
       </div>
-    </div>
+    </footer>
   );
 }
 
@@ -67,7 +76,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={`${inter.variable} ${arefRuqaaInk.variable}`}>
       <body className="min-h-screen font-sans">
         <AuthProvider>
           <div className="flex min-h-screen flex-col">

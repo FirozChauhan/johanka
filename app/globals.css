@@ -35,6 +35,7 @@
   /* Typography */
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-aref-ruqaa: var(--font-aref-ruqaa), "Aref Ruqaa Ink", serif;
 
   /* Radius — none. No rounded borders anywhere. */
   --radius: 0px;
