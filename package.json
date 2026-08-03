@@ -1,6 +1,6 @@
 {
   "name": "johanka",
-  "version": "0.1.0",
+  "version": "1.8.3",
   "private": true,
   "description": "A minimal, clean self-hosted video streaming service. Uses the StreamTape API for free video storage.",
   "scripts": {
