@@ -19,22 +19,24 @@ export function HeroVideo({ video }: { video: Video }) {
     <Link
       href={href}
       aria-label={`Play ${video.title}`}
-      className="group relative block overflow-hidden bg-sunken ring-1 ring-line transition focus:outline-none hover:ring-accent/40"
+      className="group relative block aspect-[4/5] w-full overflow-hidden bg-sunken ring-1 ring-line transition focus:outline-none hover:ring-accent/40 sm:aspect-video lg:aspect-[21/9]"
     >
-      {/* Poster backdrop */}
-      <Thumb
-        src={video.thumbnail}
-        seed={video.id}
-        className="absolute inset-0"
-        imgClassName="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
-      />
+      {/* Poster backdrop — absolutely contained so it never drives hero height */}
+      <div className="absolute inset-0">
+        <Thumb
+          src={video.thumbnail}
+          seed={video.id}
+          className="h-full w-full"
+          imgClassName="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
+        />
+      </div>
 
       {/* Legibility scrims — dark from the left for text, top for balance */}
-      <div className="absolute inset-0 bg-gradient-to-r from-base via-base/70 to-base/5" />
+      <div className="absolute inset-0 bg-gradient-to-r from-base via-base/75 to-base/10" />
       <div className="absolute inset-0 bg-gradient-to-t from-base via-transparent to-base/40" />
 
       {/* Content */}
-      <div className="relative z-10 flex min-h-[250px] flex-col justify-end px-5 py-6 sm:min-h-[320px] sm:px-8 sm:py-8 lg:min-h-[360px]">
+      <div className="absolute inset-0 z-10 flex flex-col justify-end px-5 py-6 sm:px-8 sm:py-8">
         <span className="mb-3 inline-flex w-fit items-center gap-1.5 border border-line-soft bg-base/60 px-2 py-1 text-[11px] font-semibold uppercase tracking-widest text-muted backdrop-blur">
           <PlayIcon className="h-3 w-3 text-accent" />
           Featured
