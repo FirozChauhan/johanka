@@ -14,6 +14,7 @@ function HomeContent() {
   const searchParams = useSearchParams();
   const query = (searchParams.get("q") ?? "").trim().toLowerCase();
   const [videos, setVideos] = useState<Video[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // The library comes straight from the StreamTape account (resolved
   // server-side). We only fall back to the localStorage list when the remote
@@ -24,6 +25,7 @@ function HomeContent() {
       const remote = await fetchRemoteVideos();
       if (cancelled) return;
       setVideos(remote.length > 0 ? remote : getStoredVideos());
+      setLoading(false);
     })();
     return () => {
       cancelled = true;
@@ -37,6 +39,20 @@ function HomeContent() {
   const subtitle = searching
     ? `${filtered.length} result${filtered.length === 1 ? "" : "s"} for \u201c${query}\u201d`
     : `${filtered.length} video${filtered.length === 1 ? "" : "s"} in your library`;
+
+  // Show a skeleton while the library is still loading so the empty state
+  // never flashes on first paint.
+  if (loading) {
+    return (
+      <div>
+        <header className="mb-6">
+          <h1 className="text-xl font-semibold tracking-tight">Library</h1>
+          <p className="mt-0.5 text-sm text-muted">Loading your library…</p>
+        </header>
+        <HomeLoading />
+      </div>
+    );
+  }
 
   return (
     <div>
