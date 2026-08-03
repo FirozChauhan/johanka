@@ -252,7 +252,7 @@ export default function SettingsPage() {
 
   if (phase === "loading") {
     return (
-      <div className="mx-auto max-w-3xl">
+      <div className="mx-auto max-w-5xl">
         <PageHeader health={null} locked />
         <p className="py-24 text-center text-sm text-faint">Checking access…</p>
       </div>
@@ -261,10 +261,10 @@ export default function SettingsPage() {
 
   if (phase === "setup" || phase === "lock") {
     return (
-      <div className="mx-auto max-w-3xl">
+      <div className="mx-auto max-w-5xl">
         <PageHeader health={null} locked />
         {phase === "setup" ? (
-          <form onSubmit={createKey} className="mx-auto max-w-md rounded-lg border border-line bg-surface p-6 shadow-card">
+          <form onSubmit={createKey} className="max-w-md rounded-lg border border-line bg-surface p-6 shadow-card">
             <div className="mb-4 flex items-center gap-3">
               <span className="grid h-9 w-9 place-items-center rounded-lg bg-accent/10 text-accent"><KeyIcon className="h-5 w-5" /></span>
               <div>
@@ -286,7 +286,7 @@ export default function SettingsPage() {
             </button>
           </form>
         ) : (
-          <form onSubmit={unlock} className="mx-auto max-w-md rounded-lg border border-line bg-surface p-6 shadow-card">
+          <form onSubmit={unlock} className="max-w-md rounded-lg border border-line bg-surface p-6 shadow-card">
             <div className="mb-4 flex items-center gap-3">
               <span className="grid h-9 w-9 place-items-center rounded-lg bg-accent/10 text-accent"><KeyIcon className="h-5 w-5" /></span>
               <div>
