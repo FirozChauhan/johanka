@@ -264,7 +264,7 @@ export default function SettingsPage() {
       <div className="mx-auto max-w-3xl">
         <PageHeader health={null} locked />
         {phase === "setup" ? (
-          <form onSubmit={createKey} className="mx-auto max-w-md rounded-2xl border border-line bg-surface p-6 shadow-card">
+          <form onSubmit={createKey} className="mx-auto max-w-md rounded-lg border border-line bg-surface p-6 shadow-card">
             <div className="mb-4 flex items-center gap-3">
               <span className="grid h-9 w-9 place-items-center rounded-lg bg-accent/10 text-accent"><KeyIcon className="h-5 w-5" /></span>
               <div>
@@ -286,7 +286,7 @@ export default function SettingsPage() {
             </button>
           </form>
         ) : (
-          <form onSubmit={unlock} className="mx-auto max-w-md rounded-2xl border border-line bg-surface p-6 shadow-card">
+          <form onSubmit={unlock} className="mx-auto max-w-md rounded-lg border border-line bg-surface p-6 shadow-card">
             <div className="mb-4 flex items-center gap-3">
               <span className="grid h-9 w-9 place-items-center rounded-lg bg-accent/10 text-accent"><KeyIcon className="h-5 w-5" /></span>
               <div>
@@ -317,7 +317,7 @@ export default function SettingsPage() {
 
       {/* Persistence notice */}
       {!persistenceConfigured && (
-        <section className="mb-6 rounded-xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm">
+        <section className="mb-6 rounded-md border border-amber-400/30 bg-amber-400/10 p-4 text-sm">
           <p className="font-medium text-amber-300">Settings currently can&apos;t be saved persistently</p>
           <p className="mt-1 leading-relaxed text-muted">
             No PostgreSQL connection string was found. Add one below (or set{" "}
@@ -329,7 +329,7 @@ export default function SettingsPage() {
 
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         {/* Main configuration form */}
-        <form onSubmit={save} className="min-w-0 rounded-2xl border border-line bg-surface p-5 shadow-card sm:p-6">
+        <form onSubmit={save} className="min-w-0 rounded-lg border border-line bg-surface p-5 shadow-card sm:p-6">
           {/* StreamTape */}
           <section className="border-b border-line pb-6">
             <h3 className="text-sm font-semibold uppercase tracking-widest text-faint">StreamTape</h3>
@@ -406,7 +406,7 @@ export default function SettingsPage() {
 
         {/* Side panel: status + diagnostics */}
         <div className="space-y-6">
-          <section className="rounded-2xl border border-line bg-surface p-5 shadow-card">
+          <section className="rounded-lg border border-line bg-surface p-5 shadow-card">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold uppercase tracking-widest text-faint">Status</h3>
               <StatusPill health={health} />
@@ -420,7 +420,7 @@ export default function SettingsPage() {
             </p>
           </section>
 
-          <section className="rounded-2xl border border-line bg-surface p-5 shadow-card">
+          <section className="rounded-lg border border-line bg-surface p-5 shadow-card">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold uppercase tracking-widest text-faint">Diagnostics</h3>
               {diag?.proxy_configured && (
@@ -464,7 +464,7 @@ function PageHeader({ health, locked }: { health: HealthState | null; locked?: b
   return (
     <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
       <div className="flex items-center gap-3">
-        <span className="grid h-10 w-10 place-items-center rounded-xl bg-accent/10 text-accent">
+        <span className="grid h-10 w-10 place-items-center rounded-md bg-accent/10 text-accent">
           <SettingsIcon className="h-5 w-5" />
         </span>
         <div>
@@ -484,7 +484,7 @@ function StatusPill({ health }: { health: HealthState | null }) {
   const label = ok ? "Live" : health?.configured ? "Attention" : "Not configured";
   const cls = ok ? "bg-success/15 text-success" : health?.configured ? "bg-amber-400/15 text-amber-300" : "bg-line text-faint";
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border border-line px-2.5 py-1 text-xs font-medium ${cls}`}>
+    <span className={`inline-flex items-center gap-1.5 rounded-md border border-line px-2.5 py-1 text-xs font-medium ${cls}`}>
       <span className={`h-1.5 w-1.5 rounded-full ${ok ? "bg-success" : health?.configured ? "bg-amber-300" : "bg-faint"}`} />
       {label}
     </span>
@@ -494,7 +494,7 @@ function StatusPill({ health }: { health: HealthState | null }) {
 function DiagRow({ label, ok, detail }: { label: string; ok: boolean; detail?: string }) {
   return (
     <div className="flex items-start gap-2">
-      <span className={`mt-0.5 inline-flex h-4 w-4 flex-none items-center justify-center rounded-full text-[10px] ${ok ? "bg-success/20 text-success" : "bg-danger/20 text-danger"}`}>{ok ? "✓" : "!"}</span>
+      <span className={`mt-0.5 inline-flex h-4 w-4 flex-none items-center justify-center rounded-sm text-[10px] ${ok ? "bg-success/20 text-success" : "bg-danger/20 text-danger"}`}>{ok ? "✓" : "!"}</span>
       <div className="min-w-0">
         <span className="font-medium text-fg">{label}</span>
         {detail && <span className="ml-2 break-words text-faint">{detail}</span>}

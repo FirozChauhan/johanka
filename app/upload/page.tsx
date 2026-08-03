@@ -139,13 +139,13 @@ export default function UploadPage() {
               onDrop={onDrop}
               onClick={() => inputRef.current?.click()}
               className={
-                "flex w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-16 text-center transition " +
+                "flex w-full flex-col items-center justify-center rounded-lg border-2 border-dashed px-6 py-16 text-center transition " +
                 (dragOver
                   ? "border-accent bg-accent/5"
                   : "border-line bg-surface/40 hover:border-accent/40")
               }
             >
-              <span className="mb-4 grid h-12 w-12 place-items-center rounded-xl bg-accent/10 text-accent">
+              <span className="mb-4 grid h-12 w-12 place-items-center rounded-md bg-accent/10 text-accent">
                 <UploadIcon className="h-6 w-6" />
               </span>
               <span className="text-sm font-medium">Drop a video here</span>
@@ -154,7 +154,7 @@ export default function UploadPage() {
               </span>
             </button>
           ) : (
-            <div className="flex items-center gap-4 rounded-2xl border border-line bg-surface p-4">
+            <div className="flex items-center gap-4 rounded-lg border border-line bg-surface p-4">
               <span className="grid h-11 w-11 flex-none place-items-center rounded-lg bg-accent/10 text-accent">
                 <FileIcon className="h-5 w-5" />
               </span>

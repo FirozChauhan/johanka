@@ -146,12 +146,15 @@ export function Sidebar() {
               key={href}
               href={href}
               className={
-                "flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition " +
+                "relative flex items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition " +
                 (active
                   ? "bg-surface text-fg"
                   : "text-muted hover:bg-surface/70 hover:text-fg")
               }
             >
+              {active && (
+                <span className="absolute bottom-1 left-0 top-1 w-0.5 rounded-sm bg-accent" />
+              )}
               <Icon className="h-4 w-4" /> {label}
             </Link>
           );

@@ -55,9 +55,9 @@ export function ContinueWatching({ videos }: { videos: Video[] }) {
   if (!items || items.length === 0) return null;
 
   return (
-    <section className="mt-12">
-      <div className="mb-4 flex items-baseline justify-between">
-        <h2 className="text-sm font-semibold uppercase tracking-widest text-faint">Continue watching</h2>
+    <section className="mt-8">
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-base font-semibold tracking-tight">Continue watching</h2>
         <span className="text-xs text-faint">{items.length} recent</span>
       </div>
       <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-6">

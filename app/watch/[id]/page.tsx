@@ -87,7 +87,7 @@ export default function WatchPage() {
         </div>
 
         <aside className="hidden lg:block">
-          <h3 className="mb-4 text-sm font-semibold uppercase tracking-widest text-faint">More to watch</h3>
+          <h3 className="mb-4 text-base font-semibold tracking-tight">More to watch</h3>
           {related.length > 0 ? (
             <div className="space-y-4">
               {related.map((v) => (
@@ -115,7 +115,7 @@ export default function WatchPage() {
 
       {related.length > 0 && (
         <div className="mt-12 lg:hidden">
-          <h3 className="mb-4 text-sm font-semibold uppercase tracking-widest text-faint">More to watch</h3>
+          <h3 className="mb-4 text-base font-semibold tracking-tight">More to watch</h3>
           <VideoGrid videos={related} compact />
         </div>
       )}
