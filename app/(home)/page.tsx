@@ -89,7 +89,9 @@ function HomeContent() {
         <EmptyState searching={searching} />
       ) : (
         <div>
-          <ContinueWatching videos={videos} />
+          {/* "Continue watching" is only meaningful on the full library —
+              during a search show just the results, no extra rows. */}
+          {!searching && <ContinueWatching videos={videos} />}
           <section className="mt-8">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-base font-semibold tracking-tight">
