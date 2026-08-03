@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useRef, useState } from "react";
-import { UploadIcon, XIcon, CheckIcon, FileIcon } from "@/components/icons";
+import { UploadIcon, XIcon, FileIcon } from "@/components/icons";
 import { upsertStoredVideo } from "@/lib/localstore";
 import type { Video } from "@/lib/types";
 
@@ -250,11 +250,12 @@ export default function UploadPage() {
         <button
           type="submit"
           disabled={!file || busy}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 py-3 text-sm font-semibold text-accent-ink transition hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-accent px-4 py-3 text-sm font-semibold text-white transition hover:bg-accent-strong disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto"
         >
           {busy ? (
             <span className="flex items-center gap-2">
-              <CheckIcon className="h-4 w-4" /> Working…
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+              {stage === "uploading" ? `Uploading… ${pct}%` : "Storing…"}
             </span>
           ) : (
             <>

@@ -31,16 +31,25 @@ export default function WatchPage() {
       if (remote.length > 0) list = remote;
       if (cancelled) return;
       setVideos(list);
-      setVideo(list.find((v) => v.id === id) ?? getStoredVideo(id));
+      const found = list.find((v) => v.id === id) ?? getStoredVideo(id);
+      setVideo(found);
+      if (found) document.title = `${found.title} · Johanka`;
       setReady(true);
     })();
     return () => {
       cancelled = true;
+      // Restore the default title when navigating away.
+      document.title = "Johanka";
     };
   }, [id]);
 
   if (!ready) {
-    return <div className="py-24 text-center text-sm text-faint">Loading…</div>;
+    return (
+      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-3">
+        <span className="h-8 w-8 animate-spin rounded-full border-2 border-accent/30 border-t-accent" />
+        <p className="text-sm text-faint">Loading player…</p>
+      </div>
+    );
   }
   if (!video) {
     return (
@@ -52,7 +61,7 @@ export default function WatchPage() {
         </p>
         <Link
           href="/"
-          className="mt-6 inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-ink transition hover:bg-accent-strong"
+          className="mt-6 inline-flex items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white transition hover:bg-accent-strong"
         >
           <HomeIcon className="h-4 w-4" /> Back to home
         </Link>

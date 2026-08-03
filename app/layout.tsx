@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -8,10 +8,34 @@ import { AuthGate } from "@/components/AuthGate";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
+const APP_NAME = "Johanka";
+
 export const metadata: Metadata = {
-  title: "Johanka — minimal video streaming",
+  applicationName: APP_NAME,
+  title: {
+    default: `${APP_NAME} — minimal self-hosted video streaming`,
+    template: `%s · ${APP_NAME}`,
+  },
   description:
-    "Self-hosted, minimal video streaming powered by StreamTape for free storage.",
+    "A minimal, self-hosted video streaming service. Upload videos, auto-generate posters, and stream them back — clean and fast.",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+  ),
+  openGraph: {
+    type: "website",
+    siteName: APP_NAME,
+    title: `${APP_NAME} — minimal self-hosted video streaming`,
+    description:
+      "Upload videos, auto-generate posters, and stream them back — clean and fast.",
+  },
+  icons: {
+    icon: "/icon.svg",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#0b0d10",
+  colorScheme: "dark",
 };
 
 /* A thin footer strip: "Johanka" on the left, "FIROZ" on the right. */
@@ -50,7 +74,7 @@ export default function RootLayout({
             <TopBar />
             <div className="mx-auto flex w-full max-w-[1440px] flex-1">
               <Sidebar />
-              <main className="min-w-0 flex-1 px-4 pb-24 pt-6 sm:px-6 md:px-8 md:pt-8">
+              <main className="app-main min-w-0 flex-1 px-4 pb-24 pt-6 sm:px-6 md:px-8 md:pt-8">
                 <AuthGate>{children}</AuthGate>
               </main>
             </div>
