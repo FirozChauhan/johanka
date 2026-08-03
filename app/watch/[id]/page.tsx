@@ -110,7 +110,7 @@ export default function WatchPage() {
       </div>
 
       {related.length > 0 && (
-        <div className="mt-12 lg:hidden">
+        <div className="mt-8 lg:hidden">
           <h3 className="mb-4 text-base font-semibold tracking-tight">More to watch</h3>
           <VideoGrid videos={related} compact />
         </div>
