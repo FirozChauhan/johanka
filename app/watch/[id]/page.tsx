@@ -96,7 +96,6 @@ export default function WatchPage() {
         </div>
 
         <aside className="hidden lg:block">
-          <h3 className="mb-4 text-base font-semibold tracking-tight">More to watch</h3>
           {related.length > 0 ? (
             <div className="space-y-6">
               {related.map((v) => (
