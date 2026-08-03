@@ -252,7 +252,7 @@ export default function SettingsPage() {
 
   if (phase === "loading") {
     return (
-      <div className="mx-auto max-w-5xl">
+      <div>
         <PageHeader health={null} locked />
         <p className="py-24 text-center text-sm text-faint">Checking access…</p>
       </div>
@@ -261,7 +261,7 @@ export default function SettingsPage() {
 
   if (phase === "setup" || phase === "lock") {
     return (
-      <div className="mx-auto max-w-5xl">
+      <div>
         <PageHeader health={null} locked />
         {phase === "setup" ? (
           <form onSubmit={createKey} className="max-w-md rounded-lg border border-line bg-surface p-6 shadow-card">
@@ -312,7 +312,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div>
       <PageHeader health={health} />
 
       {/* Persistence notice */}

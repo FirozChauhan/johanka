@@ -110,7 +110,7 @@ export default function UploadPage() {
   const busy = stage === "uploading" || stage === "storing";
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="max-w-3xl">
       <header className="mb-8">
         <h1 className="text-2xl font-semibold tracking-tight">Upload a video</h1>
         <p className="mt-1 text-sm text-muted">
