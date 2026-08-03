@@ -50,7 +50,14 @@ export function TopBar() {
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-base/90 backdrop-blur-xl">
       <div className="mx-auto flex h-14 max-w-[1440px] items-center gap-3 px-4">
-        {/* Brand lives in the thin header bar above; this bar is utilities only. */}
+        {/* Johanka text logo */}
+        <Link
+          href="/"
+          className="text-[15px] font-semibold tracking-tight text-fg transition hover:text-accent"
+        >
+          Johanka
+        </Link>
+
         <form onSubmit={submitSearch} className="ml-auto hidden items-center md:flex">
           <div className="relative">
             <SearchIcon className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-faint" />
@@ -62,14 +69,6 @@ export function TopBar() {
             />
           </div>
         </form>
-
-        <Link
-          href="/upload"
-          className="ml-3 hidden items-center gap-1.5 rounded-md bg-accent px-3 py-2 text-sm font-semibold text-white transition hover:bg-accent-strong sm:inline-flex"
-        >
-          <UploadIcon className="h-4 w-4" />
-          New video
-        </Link>
 
         <button
           onClick={() => setOpen((v) => !v)}
