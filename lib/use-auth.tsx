@@ -9,7 +9,11 @@ import {
   type ReactNode,
 } from "react";
 import type { AuthUser } from "./types";
-import { firebaseEnabled, signInWithGoogle } from "./firebase-client";
+import {
+  loadFirebaseConfig,
+  signInWithGoogle,
+  type FirebaseConfig,
+} from "./firebase-client";
 
 type AuthStatus = "loading" | "anon" | "authed";
 
@@ -60,12 +64,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [signingIn, setSigningIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [firebaseConfig, setFirebaseConfig] = useState<FirebaseConfig | null>(null);
 
-  // On mount: resolve the current session. If anonymous but a guest session was
-  // chosen earlier (server cookie lapsed), quietly restore it.
+  // On mount: resolve the current session and the runtime Firebase config. If
+  // anonymous but a guest session was chosen earlier, quietly restore it.
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      // Load the effective Firebase config (runtime endpoint, build fallback).
+      const cfg = await loadFirebaseConfig();
+      if (!cancelled) setFirebaseConfig(cfg);
+
       let data: { user?: AuthUser | null };
       try {
         const res = await fetch("/api/auth/me", { cache: "no-store" });
@@ -115,9 +124,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
     setSigningIn(true);
     try {
-      const idToken = await signInWithGoogle();
+      if (!firebaseConfig) {
+        setError("Google sign-in isn’t configured on this instance.");
+        return;
+      }
+      const idToken = await signInWithGoogle(firebaseConfig);
       if (!idToken) {
-        // Cancelled the popup (or Firebase unconfigured) — do nothing.
+        // Cancelled the popup — do nothing.
         return;
       }
       const res = await fetch("/api/auth/session", {
@@ -146,7 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setSigningIn(false);
     }
-  }, []);
+  }, [firebaseConfig]);
 
   const continueAsGuest = useCallback(async () => {
     setError(null);
@@ -187,7 +200,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         status,
         user,
-        firebaseEnabled: firebaseEnabled(),
+        firebaseEnabled: Boolean(firebaseConfig),
         signingIn,
         error,
         signIn,
