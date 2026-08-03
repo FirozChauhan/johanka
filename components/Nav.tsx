@@ -75,7 +75,7 @@ export function TopBar() {
 
         <button
           onClick={() => setOpen((v) => !v)}
-          className="rounded-md p-2 text-muted hover:text-fg md:hidden"
+          className="rounded-md p-2 text-muted transition hover:text-fg md:hidden"
           aria-label="Menu"
         >
           <MenuIcon className="h-5 w-5" />

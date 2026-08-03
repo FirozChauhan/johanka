@@ -92,6 +92,21 @@ body {
   color: #ffffff;
 }
 
+/* Pointers on every clickable control. <button> defaults to an arrow/text
+   cursor in several browsers, which reads as non-interactive — make intent
+   obvious everywhere, once. */
+button,
+[role="button"],
+summary,
+select,
+::file-selector-button {
+  cursor: pointer;
+}
+button:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
 /* Mobile: kill the grey tap flash on interactive elements */
 html {
   -webkit-tap-highlight-color: transparent;

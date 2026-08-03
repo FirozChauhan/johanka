@@ -167,7 +167,7 @@ export default function UploadPage() {
               <button
                 type="button"
                 onClick={() => setFile(null)}
-                className="rounded-lg p-2 text-faint hover:text-fg"
+                className="rounded-lg p-2 text-faint transition hover:text-fg"
                 aria-label="Remove file"
               >
                 <XIcon className="h-5 w-5" />
