@@ -15,7 +15,7 @@ type Stage =
 /*
   Upload page. Files are forwarded to StreamTape (free storage) by the
   server at POST /api/upload, which also auto-generates a poster frame with
-  ffmpeg and stores metadata in SQLite.
+  ffmpeg and persists the catalog metadata in PostgreSQL.
 */
 export default function UploadPage() {
   const router = useRouter();

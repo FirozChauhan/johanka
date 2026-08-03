@@ -20,8 +20,8 @@ export default function RootLayout({
     <html lang="en" className={inter.variable}>
       <body className="min-h-screen font-sans">
         <Nav />
-        <main className="mx-auto max-w-6xl px-4 pb-24 pt-8">{children}</main>
-        <footer className="mx-auto max-w-6xl px-4 pb-8">
+        <main className="mx-auto max-w-6xl px-4 pb-24 pt-10">{children}</main>
+        <footer className="mx-auto max-w-6xl px-4 pb-10">
           <div className="flex flex-col gap-2 border-t border-line pt-6 text-xs text-faint sm:flex-row sm:items-center sm:justify-between">
             <p>
               <span className="font-medium text-muted">Johanka</span> — a minimal,

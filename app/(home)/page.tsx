@@ -9,7 +9,7 @@ import type { Video } from "@/lib/types";
 import { VideoGrid } from "@/components/VideoGrid";
 import { ContinueWatching } from "@/components/ContinueWatching";
 import { Thumb } from "@/components/Thumb";
-import { PlayIcon, UploadIcon, PlusIcon } from "@/components/icons";
+import { PlayIcon, UploadIcon, PlusIcon, ArrowUpRightIcon } from "@/components/icons";
 import { formatDuration, timeAgo } from "@/lib/format";
 
 function HomeContent() {
@@ -36,29 +36,41 @@ function HomeContent() {
     ? videos.filter((v) => v.title.toLowerCase().includes(query))
     : videos;
   const latest = filtered[0] ?? null;
+  const searching = Boolean(query);
 
   return (
     <div>
-      {query && (
-        <p className="mb-8 text-sm text-muted">
-          {filtered.length} result{filtered.length === 1 ? "" : "s"} for{" "}
-          <span className="font-medium text-fg">\u201c{query}\u201d</span>
-        </p>
-      )}
-
-      {latest && <HeroSection video={latest} />}
+      {/* Dashboard header */}
+      <header className="mb-8 flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Library</h1>
+          <p className="mt-1 text-sm text-muted">
+            {searching
+              ? `${filtered.length} result${filtered.length === 1 ? "" : "s"} for \u201c${query}\u201d`
+              : "Everything in your StreamTape account, ready to stream."}
+          </p>
+        </div>
+        {!searching && (
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1 text-xs font-medium text-muted">
+            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+            {filtered.length} video{filtered.length === 1 ? "" : "s"}
+          </span>
+        )}
+      </header>
 
       {filtered.length === 0 ? (
-        <EmptyState searching={Boolean(query)} />
+        <EmptyState searching={searching} />
       ) : (
-        <div className="mt-12">
+        <div>
+          {!searching && latest && <HeroSection video={latest} />}
+
           <ContinueWatching videos={videos} />
-          <section className={query ? "" : "mt-12"}>
+
+          <section className="mt-12">
             <div className="mb-4 flex items-baseline justify-between">
-              <h2 className="text-lg font-semibold tracking-tight">
-                {query ? "Matching videos" : "Latest additions"}
+              <h2 className="text-sm font-semibold uppercase tracking-widest text-faint">
+                {searching ? "Matching videos" : "All videos"}
               </h2>
-              <span className="text-xs text-faint">{filtered.length} videos</span>
             </div>
             <VideoGrid videos={filtered} />
           </section>
@@ -80,20 +92,21 @@ function HeroSection({ video }: { video: Video }) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-base via-base/70 to-base/20" />
       </div>
-      <div className="relative flex min-h-[320px] flex-col justify-end p-6 sm:p-10">
+      <div className="relative flex min-h-[300px] flex-col justify-end p-6 sm:p-10">
         <p className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-widest text-accent-strong">
           <span className="h-px w-6 bg-accent" /> Now playing
         </p>
-        <h1 className="max-w-2xl text-2xl font-semibold tracking-tight sm:text-4xl">{video.title}</h1>
+        <h2 className="max-w-2xl text-2xl font-semibold tracking-tight sm:text-4xl">{video.title}</h2>
         {video.description && (
           <p className="mt-2 line-clamp-2 max-w-xl text-sm text-muted">{video.description}</p>
         )}
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <Link
             href={`/watch/${video.id}`}
-            className="inline-flex items-center gap-2 rounded-lg bg-fg px-4 py-2 text-sm font-semibold text-black transition hover:bg-white"
+            className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-ink transition hover:bg-accent-strong"
           >
             <PlayIcon className="h-4 w-4" /> Watch now
+            <ArrowUpRightIcon className="h-3.5 w-3.5 opacity-70" />
           </Link>
           <span className="text-xs text-faint">
             {timeAgo(video.created_at)}
@@ -108,13 +121,13 @@ function HeroSection({ video }: { video: Video }) {
 function EmptyState({ searching }: { searching: boolean }) {
   if (searching) {
     return (
-      <div className="rounded-2xl border border-dashed border-line bg-surface/40 py-20 text-center">
+      <div className="rounded-2xl border border-dashed border-line bg-surface/40 py-24 text-center">
         <p className="text-sm text-muted">No videos match that search.</p>
       </div>
     );
   }
   return (
-    <div className="mt-8 flex flex-col items-center rounded-2xl border border-dashed border-line bg-surface/40 px-6 py-20 text-center">
+    <div className="flex flex-col items-center rounded-2xl border border-dashed border-line bg-surface/40 px-6 py-24 text-center">
       <span className="mb-5 grid h-14 w-14 place-items-center rounded-2xl bg-accent/10 text-accent">
         <PlusIcon className="h-7 w-7" />
       </span>
@@ -135,7 +148,7 @@ function EmptyState({ searching }: { searching: boolean }) {
 function HomeLoading() {
   return (
     <div className="space-y-8">
-      <div className="shimmer h-[320px] w-full rounded-2xl bg-surface" />
+      <div className="shimmer h-[300px] w-full rounded-2xl bg-surface" />
       <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
         {Array.from({ length: 8 }).map((_, i) => (
           <div key={i} className="space-y-3">
