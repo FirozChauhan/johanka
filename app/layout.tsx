@@ -15,16 +15,18 @@ export const metadata: Metadata = {
 /* A thin footer strip: "Johanka" on the left, "FIROZ" on the right. */
 function FooterBar() {
   return (
-    <div className="sticky bottom-0 z-40 flex h-9 items-center justify-between border-t border-line bg-base/95 px-4 text-xs backdrop-blur-xl sm:px-6">
-      <Link
-        href="/"
-        className="font-semibold tracking-tight text-fg transition hover:text-accent"
-      >
-        Johanka
-      </Link>
-      <span className="font-semibold uppercase tracking-[0.25em] text-muted">
-        Firoz
-      </span>
+    <div className="sticky bottom-0 z-40 border-t border-line bg-base/95 backdrop-blur-xl">
+      <div className="mx-auto flex h-9 max-w-[1440px] items-center justify-between px-4 text-xs sm:px-6">
+        <Link
+          href="/"
+          className="font-semibold tracking-tight text-fg transition hover:text-accent"
+        >
+          Johanka
+        </Link>
+        <span className="font-semibold uppercase tracking-[0.25em] text-muted">
+          Firoz
+        </span>
+      </div>
     </div>
   );
 }
