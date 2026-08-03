@@ -14,9 +14,9 @@
   --color-raised: #1a1d21;    /* hovered cards, dropdowns */
   --color-sunken: #0e1013;    /* player wells / inputs */
 
-  /* Lines */
-  --color-line: #23272b;
-  --color-line-soft: #181b1f;
+  /* Lines — brighter, like Render's visible hairlines */
+  --color-line: #343a44;
+  --color-line-soft: #242a32;
 
   /* Text */
   --color-fg: #f1f2f4;        /* primary text */
@@ -69,13 +69,13 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #2c2c33;
+  background: #343a44;
   border-radius: 999px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3a3a43;
+  background: #3f4652;
   background-clip: content-box;
 }
 

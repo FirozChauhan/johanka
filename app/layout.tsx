@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { TopBar, Sidebar } from "@/components/Nav";
@@ -11,6 +12,27 @@ export const metadata: Metadata = {
     "Self-hosted, minimal video streaming powered by StreamTape for free storage.",
 };
 
+/* A thin brand strip: "Johanka" on the left, "FIROZ" on the right. */
+function BrandBar({ edge }: { edge: "top" | "bottom" }) {
+  return (
+    <div
+      className={`flex h-9 items-center justify-between px-4 text-xs sm:px-6 ${
+        edge === "top" ? "border-b border-line" : "border-t border-line"
+      }`}
+    >
+      <Link
+        href="/"
+        className="font-semibold tracking-tight text-fg transition hover:text-accent"
+      >
+        Johanka
+      </Link>
+      <span className="font-semibold uppercase tracking-[0.25em] text-muted">
+        Firoz
+      </span>
+    </div>
+  );
+}
+
 export default function RootLayout({
   children,
 }: {
@@ -20,6 +42,7 @@ export default function RootLayout({
     <html lang="en" className={inter.variable}>
       <body className="min-h-screen font-sans">
         <div className="flex min-h-screen flex-col">
+          <BrandBar edge="top" />
           <TopBar />
           <div className="mx-auto flex w-full max-w-[1440px] flex-1">
             <Sidebar />
@@ -27,6 +50,7 @@ export default function RootLayout({
               {children}
             </main>
           </div>
+          <BrandBar edge="bottom" />
         </div>
       </body>
     </html>

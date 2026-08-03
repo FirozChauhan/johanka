@@ -50,8 +50,7 @@ export function TopBar() {
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-base/90 backdrop-blur-xl">
       <div className="mx-auto flex h-14 max-w-[1440px] items-center gap-3 px-4">
-        <Logo />
-
+        {/* Brand lives in the thin header bar above; this bar is utilities only. */}
         <form onSubmit={submitSearch} className="ml-auto hidden items-center md:flex">
           <div className="relative">
             <SearchIcon className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-faint" />
