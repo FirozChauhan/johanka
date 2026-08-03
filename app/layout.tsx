@@ -14,14 +14,18 @@ export const metadata: Metadata = {
 
 /* A thin footer strip: "Johanka" on the left, "FIROZ" on the right. */
 function FooterBar() {
+  const version = process.env.NEXT_PUBLIC_APP_VERSION || "";
   return (
     <div className="sticky bottom-0 z-40 border-t border-line bg-base/95 backdrop-blur-xl">
       <div className="mx-auto flex h-9 max-w-[1440px] items-center justify-between px-4 text-xs">
         <Link
           href="/"
-          className="font-semibold tracking-tight text-fg transition hover:text-accent"
+          className="inline-flex items-baseline gap-1.5 font-semibold tracking-tight text-fg transition hover:text-accent"
         >
           Johanka
+          {version && (
+            <span className="font-normal text-faint">v{version.replace(/^v/i, "")}</span>
+          )}
         </Link>
         <span className="font-semibold uppercase tracking-[0.25em] text-muted">
           Firoz
