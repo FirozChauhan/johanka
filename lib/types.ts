@@ -34,7 +34,8 @@ export interface AppSettings {
   cloudinary_cloud_name?: string;
   cloudinary_api_key?: string;
   cloudinary_api_secret?: string;
-  /** Optional PostgreSQL connection string for catalog enrichment. */
+  /** Optional PostgreSQL connection string. Persists /settings config and
+   * enriches the catalog. */
   postgres_connection_string?: string;
 }
 

@@ -1,12 +1,19 @@
 import { Pool } from "pg";
+import type { AppSettings } from "./types";
 
 /*
-  Optional PostgreSQL catalog for enriched metadata (posters, descriptions,
-  durations) keyed by StreamTape file id.
+  Optional PostgreSQL store.
 
-  Everything here degrades gracefully: if no connection string is configured
-  the app simply falls back to the raw StreamTape listing. The connection
-  string can come from env (DATABASE_URL / POSTGRES_URL) or the /settings page.
+  Two things live here:
+  1. The video catalog — enriched metadata (posters, descriptions, durations)
+     keyed by StreamTape file id.
+  2. App settings — the operator config (StreamTape / Cloudinary / the DSN
+     itself) persisted server-side so it survives across browsers and incognito
+     sessions (no more localStorage-only settings).
+
+  Everything degrades gracefully: if no connection string is configured the app
+  simply falls back to the raw StreamTape listing. The connection string can
+  come from env (DATABASE_URL / POSTGRES_URL) or the /settings page.
 */
 
 export interface DbVideoMeta {
@@ -120,4 +127,80 @@ export async function fetchVideosMeta(
     });
   }
   return out;
+}
+
+/* --------------------------------- Settings --------------------------------- */
+
+/*
+  A single-row settings table. `id BOOLEAN PRIMARY KEY DEFAULT TRUE` enforces
+  that there is exactly one row. Settings are the operator config that used to
+  live only in browser localStorage; persisting them here makes the app behave
+  the same in every browser, profile, and incognito window. Env vars still win
+  at resolve time (see lib/settings.ts) but are not stored here.
+*/
+
+export async function ensureSettingsTable(pool: Pool): Promise<void> {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS settings (
+      id                        BOOLEAN PRIMARY KEY DEFAULT TRUE,
+      streamtape_login          TEXT,
+      streamtape_key            TEXT,
+      cloudinary_cloud_name     TEXT,
+      cloudinary_api_key        TEXT,
+      cloudinary_api_secret     TEXT,
+      postgres_connection_string TEXT,
+      updated_at                BIGINT,
+      CONSTRAINT settings_singleton CHECK (id = TRUE)
+    );
+  `);
+}
+
+export async function loadSettingsFromDb(
+  connectionString: string
+): Promise<AppSettings> {
+  const pool = getPool(connectionString);
+  await ensureSettingsTable(pool);
+  const res = await pool.query(`SELECT * FROM settings WHERE id = TRUE`);
+  if (res.rows.length === 0) return {};
+  const r = res.rows[0];
+  return {
+    streamtape_login: r.streamtape_login ?? undefined,
+    streamtape_key: r.streamtape_key ?? undefined,
+    cloudinary_cloud_name: r.cloudinary_cloud_name ?? undefined,
+    cloudinary_api_key: r.cloudinary_api_key ?? undefined,
+    cloudinary_api_secret: r.cloudinary_api_secret ?? undefined,
+    postgres_connection_string: r.postgres_connection_string ?? undefined,
+  };
+}
+
+export async function saveSettingsToDb(
+  connectionString: string,
+  settings: AppSettings
+): Promise<void> {
+  const pool = getPool(connectionString);
+  await ensureSettingsTable(pool);
+  await pool.query(
+    `INSERT INTO settings
+       (id, streamtape_login, streamtape_key, cloudinary_cloud_name,
+        cloudinary_api_key, cloudinary_api_secret, postgres_connection_string,
+        updated_at)
+     VALUES (TRUE, $1,$2,$3,$4,$5,$6,$7)
+     ON CONFLICT (id) DO UPDATE SET
+       streamtape_login           = EXCLUDED.streamtape_login,
+       streamtape_key             = EXCLUDED.streamtape_key,
+       cloudinary_cloud_name      = EXCLUDED.cloudinary_cloud_name,
+       cloudinary_api_key         = EXCLUDED.cloudinary_api_key,
+       cloudinary_api_secret      = EXCLUDED.cloudinary_api_secret,
+       postgres_connection_string = EXCLUDED.postgres_connection_string,
+       updated_at                 = EXCLUDED.updated_at`,
+    [
+      settings.streamtape_login ?? null,
+      settings.streamtape_key ?? null,
+      settings.cloudinary_cloud_name ?? null,
+      settings.cloudinary_api_key ?? null,
+      settings.cloudinary_api_secret ?? null,
+      settings.postgres_connection_string ?? null,
+      Math.floor(Date.now() / 1000),
+    ]
+  );
 }

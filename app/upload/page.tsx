@@ -3,7 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useRef, useState } from "react";
 import { UploadIcon, XIcon, CheckIcon, FileIcon } from "@/components/icons";
-import { getStoredSettings, upsertStoredVideo } from "@/lib/localstore";
+import { upsertStoredVideo } from "@/lib/localstore";
+import { fetchSettings } from "@/lib/client-settings";
 import type { Video } from "@/lib/types";
 
 type Stage =
@@ -62,7 +63,8 @@ export default function UploadPage() {
     // Credentials: the server is stateless, so send the stored StreamTape
     // creds along so it can forward the file. Cloudinary + Postgres settings
     // ride along so the poster upload / catalog enrichment happen server-side.
-    const settings = getStoredSettings();
+    // The settings come from the server (PostgreSQL), not localStorage.
+    const settings = await fetchSettings();
     form.append("login", settings.streamtape_login || "");
     form.append("key", settings.streamtape_key || "");
     form.append("cloudinary_cloud_name", settings.cloudinary_cloud_name || "");

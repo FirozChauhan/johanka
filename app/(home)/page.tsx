@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { getStoredSettings, getStoredVideos } from "@/lib/localstore";
+import { getStoredVideos } from "@/lib/localstore";
+import { fetchSettings } from "@/lib/client-settings";
 import { fetchRemoteVideos } from "@/lib/remote";
 import type { Video } from "@/lib/types";
 import { VideoGrid } from "@/components/VideoGrid";
@@ -24,7 +25,7 @@ function HomeContent() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const creds = getStoredSettings();
+      const creds = await fetchSettings();
       if (!creds.streamtape_login || !creds.streamtape_key) {
         if (!cancelled) setVideos(getStoredVideos());
         return;

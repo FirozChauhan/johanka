@@ -5,11 +5,12 @@ import { useEffect, useState } from "react";
 import type { Video } from "@/lib/types";
 import { pushHistory } from "./ContinueWatching";
 import { CopyIcon, CheckIcon, LinkIcon, TrashIcon } from "./icons";
-import { getStoredSettings, removeStoredVideo } from "@/lib/localstore";
+import { fetchSettings } from "@/lib/client-settings";
+import { removeStoredVideo } from "@/lib/localstore";
 
-/* Credential query string for the stateless API routes. */
-function credsQuery(): string {
-  const s = getStoredSettings();
+/* Credential query string for the stateless API routes (from server settings). */
+async function credsQuery(): Promise<string> {
+  const s = await fetchSettings();
   return `login=${encodeURIComponent(s.streamtape_login || "")}&key=${encodeURIComponent(s.streamtape_key || "")}`;
 }
 
@@ -41,8 +42,9 @@ export function WatchActions({ video }: { video: Video }) {
   async function openOriginal() {
     setDirectLoading(true);
     try {
+      const q = await credsQuery();
       const res = await fetch(
-        `/api/videos/${video.id}/direct?${credsQuery()}&streamtape_id=${encodeURIComponent(video.streamtape_id ?? "")}`
+        `/api/videos/${video.id}/direct?${q}&streamtape_id=${encodeURIComponent(video.streamtape_id ?? "")}`
       );
       const data = await res.json();
       if (data.direct_url) {
@@ -62,8 +64,9 @@ export function WatchActions({ video }: { video: Video }) {
     setDeleting(true);
     try {
       // Best-effort remote delete; the video is gone from localStorage either way.
+      const q = await credsQuery();
       await fetch(
-        `/api/videos/${video.id}?${credsQuery()}&streamtape_id=${encodeURIComponent(video.streamtape_id ?? "")}`,
+        `/api/videos/${video.id}?${q}&streamtape_id=${encodeURIComponent(video.streamtape_id ?? "")}`,
         { method: "DELETE" }
       ).catch(() => {});
       removeStoredVideo(video.id);

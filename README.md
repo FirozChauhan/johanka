@@ -6,7 +6,7 @@ heavy storage offloaded to **StreamTape's free API** so you don't pay for
 bandwidth or disk.
 
 > Clean, dark, minimal UI · drag-and-drop uploads · auto thumbnails via
-> ffmpeg · search · continue-watching · zero external database.
+> ffmpeg · search · continue-watching · optional PostgreSQL persistence.
 
 ---
 
@@ -33,7 +33,7 @@ Browser ──upload──▶ Next.js server ──multipart──▶ StreamTape
                          │                              │
                          │  ffmpeg poster frame         │  returns file id + embed URL
                          ▼                              ▼
-                      SQLite (metadata) ◀───────────────┘
+               PostgreSQL (settings + metadata) ◀───────┘
                          │
               ┌──────────┴───────────┐
               ▼                      ▼
@@ -47,6 +47,10 @@ Browser ──upload──▶ Next.js server ──multipart──▶ StreamTape
   via `file/listfolder` — no local database or localStorage catalog needed.
   Repeat visits hit a short server-side cache; titles and sizes are derived
   from each file's metadata on StreamTape.
+- **Settings**: the `/settings` config (StreamTape credentials, Cloudinary,
+  the Postgres DSN) is saved server-side in a PostgreSQL `settings` table, so
+  it persists across browsers and incognito windows — not per-browser
+  localStorage. Env vars still take precedence.
 - **Playback**: the watch page embeds StreamTape's player via iframe — no
   transcoding infrastructure needed on your side. An optional "Original file"
   button resolves StreamTape's temporary direct mp4 link.
@@ -60,7 +64,8 @@ Browser ──upload──▶ Next.js server ──multipart──▶ StreamTape
 - 📺 **Streaming** through StreamTape's embeddable player
 - 🔎 **Search** videos by title
 - ⏯️ **Continue watching** (per-browser history, no accounts)
-- ⚙️ **Settings page** to configure StreamTape credentials at runtime
+- ⚙️ **Settings page** to configure StreamTape credentials at runtime —
+  saved to PostgreSQL, not localStorage, so they follow you into incognito
 - 🩺 **Health check** that validates credentials against StreamTape's API
 - 🎨 **Minimal dark UI** — Inter font, custom design tokens, no UI kit bloat
 - 🐳 **Docker-ready** with a standalone Next.js image
@@ -80,15 +85,22 @@ Browser ──upload──▶ Next.js server ──multipart──▶ StreamTape
 **Steps**
 
 ```bash
-# 1. Install dependencies (this also initializes the SQLite DB)
+# 1. Install dependencies
 npm install
 
-# 2. Start the dev server
+# 2. (Optional but recommended) point at a local PostgreSQL for persistence
+cp .env.example .env        # then fill in DATABASE_URL + credentials
+export DATABASE_URL=postgres://user:password@localhost:5432/johanka
+
+# 3. Start the dev server
 npm run dev
 ```
 
 Open <http://localhost:3000>. The first time, go to **/settings** and add your
 StreamTape credentials (see below), then upload a video from **/upload**.
+Settings are stored in PostgreSQL (the `settings` and `videos` tables are
+created automatically on first use), so they stay the same in every browser —
+including incognito.
 
 > No `ffmpeg`? The app still works — uploads succeed, you just won't get an
 
@@ -97,9 +109,10 @@ StreamTape credentials (see below), then upload a video from **/upload**.
 ## Deploying
 
 Johanka is designed to be **self-hosted on a persistent filesystem** (a VPS or
-Docker volume), because it uses SQLite + local poster files. It is **not**
-suited to serverless platforms (Vercel functions, etc.) where the filesystem
-is ephemeral.
+Docker volume), because it uses local poster files. It is **not** suited to
+serverless platforms (Vercel functions, etc.) where the filesystem is
+ephemeral. Add a **PostgreSQL** database for persistent settings and metadata
+(without one, the app still works but settings fall back to the browser).
 
 ### Docker (recommended)
 
@@ -157,11 +170,10 @@ johanka/
 ├─ app/
 │  ├─ api/
 │  │  ├─ upload/route.ts            POST   upload file -> StreamTape + DB
-│  │  ├─ videos/route.ts            GET    list videos
-│  │  ├─ videos/[id]/route.ts       GET/DELETE  one video
+│  │  ├─ settings/route.ts          GET/POST  read/save server-persisted settings
+│  │  ├─ videos/[id]/route.ts       DELETE  delete StreamTape file
 │  │  ├─ videos/[id]/direct/route.ts GET   resolve StreamTape direct mp4
-│  │  ├─ settings/route.ts          GET/PUT  runtime credentials
-│  │  └─ streamtape/health/route.ts GET    validate credentials
+│  │  └─ streamtape/                files/ health/ diagnose  (StreamTape API)
 │  ├─ watch/[id]/page.tsx           watch page (player + actions)
 │  ├─ upload/page.tsx               drag-drop upload UI
 │  ├─ settings/page.tsx             operator panel
@@ -172,16 +184,15 @@ johanka/
 │  └─ globals.css                   design tokens (@theme) + base styles
 ├─ components/                      Nav, VideoCard/Grid, Player, icons, …
 ├─ lib/
-│  ├─ db.ts                         SQLite connection + migrations
-│  ├─ settings.ts                   settings get/set (env overrides DB)
+│  ├─ db.ts                         PostgreSQL pool + videos/settings tables
+│  ├─ settings.ts                   server-side settings resolution (env over DB)
+│  ├─ client-settings.ts            fetch/cache server settings in the browser
 │  ├─ streamtape.ts                 StreamTape API client
-│  ├─ videos.ts                     video data-access layer
 │  ├─ ffmpeg.ts                     poster extraction + duration probe
 │  ├─ format.ts                     bytes/duration/timeAgo helpers
 │  └─ types.ts                      shared TS types
-├─ scripts/init-db.mjs              DB + thumbs dir bootstrap (postinstall)
 ├─ Dockerfile / docker-compose.yml  self-hosted deployment
-└─ data/ · public/thumbs/           runtime data (gitignored, volume-mounted)
+└─ public/thumbs/                   runtime data (gitignored, volume-mounted)
 ```
 
 ## API reference
@@ -189,13 +200,13 @@ johanka/
 | Method | Route                      | Purpose                                  |
 |--------|----------------------------|------------------------------------------|
 | POST   | `/api/upload`              | multipart upload → StreamTape → DB       |
-| GET    | `/api/videos`              | list videos (newest first)               |
-| GET    | `/api/videos/[id]`         | get one video                            |
-| DELETE | `/api/videos/[id]`         | delete metadata + StreamTape file        |
-| GET    | `/api/videos/[id]/direct`  | resolve a temporary direct mp4 link      |
-| GET    | `/api/settings`            | read settings (key is masked)            |
-| PUT    | `/api/settings`            | save StreamTape API/FTP credentials      |
+| GET    | `/api/settings`            | read server-persisted settings           |
+| POST   | `/api/settings`            | save server-persisted settings (DB)      |
+| GET    | `/api/streamtape/files`    | list library from StreamTape account     |
 | GET    | `/api/streamtape/health`   | validate credentials + account info      |
+| GET    | `/api/streamtape/diagnose` | connectivity diagnostics                 |
+| DELETE | `/api/videos/[id]`         | delete StreamTape file                   |
+| GET    | `/api/videos/[id]/direct`  | resolve a temporary direct mp4 link      |
 
 ---
 
@@ -207,19 +218,20 @@ The codebase is intentionally small and flat so it's easy to extend.
 `@theme { ... }`. Change `--color-accent`, `--color-base`, etc. and the whole
 app updates.
 
-**Add a field to videos:** add the column in `lib/db.ts` (migration) and
-`scripts/init-db.mjs`, add it to the `Video` type in `lib/types.ts`, map it in
-`lib/videos.ts` (`toVideo` / `createVideo` / `updateVideo`), then use it in the
-UI. SQLite migrations are additive `CREATE TABLE IF NOT EXISTS`; for altering
-existing columns, delete `data/app.db` to reset in dev.
+**Add a field to videos:** add the column in `lib/db.ts` (`ensureVideosTable`),
+add it to the `Video` type in `lib/types.ts`, map it in the API route that
+builds videos, then use it in the UI. Tables are created automatically with
+`CREATE TABLE IF NOT EXISTS`; to alter existing columns, run an `ALTER TABLE`
+or recreate the DB.
+
+**Add a setting:** add the column to the `settings` table in `lib/db.ts`
+(`ensureSettingsTable`), add it to `AppSettings` in `lib/types.ts`, and surface
+it in `app/api/settings/route.ts` (read + save) and `app/settings/page.tsx`.
 
 **Use a different storage backend:** replace `lib/streamtape.ts` with another
 provider (e.g. Backblaze B2, S3) keeping the same exported functions
 (`uploadFile`, `embedUrl`, `getDirectLink`, `deleteFile`). Nothing else needs
 to change.
-
-**Switch to Postgres:** swap `lib/db.ts` + `lib/videos.ts` + `lib/settings.ts`
-for a Postgres driver; the API routes and UI stay the same.
 
 **Common scripts**
 
@@ -227,7 +239,6 @@ for a Postgres driver; the API routes and UI stay the same.
 npm run dev        # dev server with hot reload
 npm run build      # production build
 npm start          # run the production build
-npm run db:init    # (re)initialize the SQLite database
 npm run lint       # eslint
 ```
 
@@ -242,8 +253,9 @@ npm run lint       # eslint
   correct and that your StreamTape account isn't over quota.
 - **No poster generated** — ensure `ffmpeg` is installed and on `PATH`. In
   Docker it's bundled for you.
-- **`better-sqlite3` native build fails** — make sure build tools are present
-  (`python3 make g++` on Debian). The Docker image handles this automatically.
+- **Settings don't persist** — the app stores settings in PostgreSQL. Make sure
+  `DATABASE_URL` is set in env (or saved in `/settings`), and that the
+  database is reachable from the app server.
 - **Videos don't appear after upload** — the home page is `force-dynamic`, so a
   refresh should show them. If using a CDN in front, disable caching for HTML.
 - **Direct mp4 link fails** — some StreamTape files are captcha-protected and
@@ -265,7 +277,8 @@ ffmpeg. Storage & streaming powered by the StreamTape API.
    **API/FTP Password** (StreamTape uses one username + password for both FTP
    and its API; the API refers to them as `login` and `key`).
 3. Add them **either**:
-   - in the app at **`/settings`** (stored in the browser, editable at runtime), **or**
+   - in the app at **`/settings`** (persisted to PostgreSQL, editable at
+     runtime, follows you into incognito), **or**
    - via environment variables (recommended for production):
 
      ```bash
@@ -280,7 +293,7 @@ in dev.
 
 ---
 
-## Cloudinary posters & PostgreSQL catalog (optional)
+## Cloudinary posters & PostgreSQL persistence
 
 Without any extra setup the library already mirrors everything in your
 StreamTape account. Two optional integrations make posters and metadata stick:
@@ -289,12 +302,23 @@ StreamTape account. Two optional integrations make posters and metadata stick:
   `CLOUDINARY_API_SECRET`) — the ffmpeg poster frame generated at upload time
   is pushed to Cloudinary and referenced by a stable hosted URL, so cards keep
   real thumbnails even after the local `/thumbs` dir is wiped by a redeploy.
-- **PostgreSQL** (`DATABASE_URL`) — stores enriched metadata (posters,
-  descriptions, durations, custom titles) keyed by StreamTape file id. The
-  `videos` table is created automatically on first use and merges with the raw
-  StreamTape listing on every page load.
+- **PostgreSQL** (`DATABASE_URL`) — holds **everything the server needs to
+  remember**:
+  - the `settings` table — the operator config from `/settings` (StreamTape
+    credentials, Cloudinary keys, the DSN itself), so it's the same in every
+    browser and **survives incognito**;
+  - the `videos` table — enriched metadata (posters, descriptions, durations,
+    custom titles) keyed by StreamTape file id. Both tables are created
+    automatically on first use and merge with the raw StreamTape listing on
+    every page load.
 
-Both can be configured at runtime in **/settings** (stored in the browser and
-forwarded with each request) or via env vars in production — env vars always
-win. Everything degrades gracefully: no Cloudinary → thumbnails stay on the
-local `/thumbs` dir; no PostgreSQL → the raw StreamTape listing is used.
+Both can be configured at runtime in **/settings** (persisted server-side) or
+via env vars in production — env vars always win. Everything degrades
+gracefully: no Cloudinary → thumbnails stay on the local `/thumbs` dir; no
+PostgreSQL → the raw StreamTape listing is used and settings fall back to the
+current browser.
+
+> **Incognito tip:** for settings to appear in a browser that has never visited
+> `/settings`, set `DATABASE_URL` in your environment (`.env` /
+> `docker-compose.yml`). The connection string itself can't come from a browser
+> that has no localStorage.

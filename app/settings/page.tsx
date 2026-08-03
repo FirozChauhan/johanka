@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { CheckIcon, SettingsIcon, SearchIcon } from "@/components/icons";
+import { fetchSettings, clearSettingsCache } from "@/lib/client-settings";
 import { getStoredSettings, saveStoredSettings } from "@/lib/localstore";
 
 interface HealthState {
@@ -24,6 +25,10 @@ interface DiagState {
   at runtime (no redeploy needed), and verify they work against StreamTape's
   /account/info endpoint. Env vars (STREAMTAPE_LOGIN/STREAMTAPE_KEY) act as
   a higher-priority override, so production can lock credentials down there.
+
+  Settings are persisted server-side in PostgreSQL (see /api/settings), so they
+  survive across browsers, profiles, and incognito windows instead of living
+  only in localStorage.
 */
 export default function SettingsPage() {
   const [login, setLogin] = useState("");
@@ -35,6 +40,7 @@ export default function SettingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [diag, setDiag] = useState<DiagState | null>(null);
   const [diagLoading, setDiagLoading] = useState(false);
+  const [persistenceConfigured, setPersistenceConfigured] = useState(false);
 
   // Cloudinary (hosted posters) — optional.
   const [cloudName, setCloudName] = useState("");
@@ -43,22 +49,24 @@ export default function SettingsPage() {
   const [cloudSecret, setCloudSecret] = useState("");
   const [cloudSecretSet, setCloudSecretSet] = useState(false);
 
-  // PostgreSQL (catalog enrichment) — optional.
+  // PostgreSQL — the server-side settings store + optional catalog enrichment.
   const [postgresDsn, setPostgresDsn] = useState("");
 
-  const load = useCallback(() => {
-    // Settings live in localStorage now (no server DB).
-    const s = getStoredSettings();
+  const load = useCallback(async () => {
+    // Settings are persisted on the server (PostgreSQL); localStorage is only
+    // a bootstrap DSN fallback so the server can reach the settings table.
+    const s = await fetchSettings(true);
     setLogin(s.streamtape_login || "");
     setKeySet(Boolean(s.streamtape_key));
     setCloudName(s.cloudinary_cloud_name || "");
     setCloudKeySet(Boolean(s.cloudinary_api_key));
     setCloudSecretSet(Boolean(s.cloudinary_api_secret));
     setPostgresDsn(s.postgres_connection_string || "");
+    setPersistenceConfigured(Boolean(s.postgres_connection_string));
   }, []);
 
   const loadHealth = useCallback(async () => {
-    const s = getStoredSettings();
+    const s = await fetchSettings();
     const q = `login=${encodeURIComponent(s.streamtape_login || "")}&key=${encodeURIComponent(s.streamtape_key || "")}`;
     const res = await fetch(`/api/streamtape/health?${q}`);
     const data: HealthState = await res.json();
@@ -69,7 +77,7 @@ export default function SettingsPage() {
     setDiagLoading(true);
     setDiag(null);
     try {
-      const s = getStoredSettings();
+      const s = await fetchSettings();
       const q = `login=${encodeURIComponent(s.streamtape_login || "")}&key=${encodeURIComponent(s.streamtape_key || "")}`;
       const res = await fetch(`/api/streamtape/diagnose?${q}`);
       const data: DiagState = await res.json();
@@ -99,23 +107,40 @@ export default function SettingsPage() {
     setError(null);
     setSaved(false);
     try {
-      const current = getStoredSettings();
-      const next = {
-        ...current,
-        streamtape_login: login.trim(),
-        cloudinary_cloud_name: cloudName.trim(),
-        postgres_connection_string: postgresDsn.trim(),
-      };
-      if (key.trim()) next.streamtape_key = key.trim();
-      if (cloudKey.trim()) next.cloudinary_api_key = cloudKey.trim();
-      if (cloudSecret.trim()) next.cloudinary_api_secret = cloudSecret.trim();
-      saveStoredSettings(next);
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          streamtape_login: login.trim(),
+          streamtape_key: key.trim(),
+          cloudinary_cloud_name: cloudName.trim(),
+          cloudinary_api_key: cloudKey.trim(),
+          cloudinary_api_secret: cloudSecret.trim(),
+          postgres_connection_string: postgresDsn.trim(),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.configured) {
+        throw new Error(data.error || "Save failed — check your PostgreSQL connection string.");
+      }
+      // Invalidate the client cache so the app picks up the new settings.
+      clearSettingsCache();
+      const s = data.settings;
       setKey("");
-      setKeySet(Boolean(next.streamtape_key));
+      setKeySet(Boolean(s.streamtape_key));
       setCloudKey("");
-      setCloudKeySet(Boolean(next.cloudinary_api_key));
+      setCloudKeySet(Boolean(s.cloudinary_api_key));
       setCloudSecret("");
-      setCloudSecretSet(Boolean(next.cloudinary_api_secret));
+      setCloudSecretSet(Boolean(s.cloudinary_api_secret));
+      setPostgresDsn(s.postgres_connection_string || "");
+      setPersistenceConfigured(Boolean(s.postgres_connection_string));
+      // Mirror the DSN to localStorage as a bootstrap so this browser can reach
+      // the settings table even when DATABASE_URL isn't in env. (Other
+      // browsers/incognito need DATABASE_URL set to work.)
+      saveStoredSettings({
+        ...getStoredSettings(),
+        postgres_connection_string: s.postgres_connection_string || "",
+      });
       setSaved(true);
       await loadHealth();
       setTimeout(() => setSaved(false), 1800);
@@ -136,9 +161,23 @@ export default function SettingsPage() {
           <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
           <p className="mt-0.5 text-sm text-muted">
             Configure StreamTape — plus optional Cloudinary posters and a PostgreSQL catalog.
+            Settings are saved server-side, so they persist across browsers and incognito.
           </p>
         </div>
       </header>
+
+      {/* Persistence notice */}
+      {!persistenceConfigured && (
+        <section className="mb-8 rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm">
+          <p className="font-medium text-amber-300">Settings currently can&apos;t be saved persistently</p>
+          <p className="mt-1 leading-relaxed text-muted">
+            No PostgreSQL connection string was found. Add one below (or set{" "}
+            <code className="rounded bg-sunken px-1 py-0.5 text-fg">DATABASE_URL</code>{" "}
+            in your env) so your configuration is stored on the server and stays
+            the same in every browser — including incognito.
+          </p>
+        </section>
+      )}
 
       {/* Status card */}
       <section className="mb-8 rounded-2xl border border-line bg-surface p-5">
@@ -304,16 +343,20 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* PostgreSQL — optional catalog enrichment */}
+        {/* PostgreSQL — settings persistence + optional catalog enrichment */}
         <div className="border-t border-line pt-5">
           <h3 className="text-sm font-semibold uppercase tracking-widest text-faint">
             PostgreSQL
-            <span className="ml-1.5 font-normal normal-case text-muted">(optional · catalog enrichment)</span>
+            <span className="ml-1.5 font-normal normal-case text-muted">(required to save settings)</span>
           </h3>
           <p className="mt-1 text-xs leading-relaxed text-faint">
-            Stores posters, descriptions, and durations keyed by StreamTape file
-            id, so the library keeps real thumbnails and custom metadata across
-            restarts. Leave blank to use the raw StreamTape listing.
+            The connection string below is where ALL settings on this page are
+            stored — so they persist across browsers and incognito windows
+            instead of living in localStorage. It also powers the enriched
+            catalog: posters, descriptions, and durations keyed by StreamTape
+            file id survive restarts. Setting{" "}
+            <code className="rounded bg-sunken px-1 py-0.5 text-muted">DATABASE_URL</code>{" "}
+            in env is the recommended way to make this cross-browser.
           </p>
           <div className="mt-4">
             <label htmlFor="postgresDsn" className="mb-1.5 block text-xs font-medium uppercase tracking-widest text-faint">
@@ -346,14 +389,18 @@ export default function SettingsPage() {
       </form>
 
       <p className="mt-6 text-xs leading-relaxed text-faint">
-        Tip: in production you can set these as environment variables instead —
-        they take precedence over anything saved here.{" "}
+        Settings are stored in PostgreSQL (server-side), so they survive across
+        browsers and incognito windows. Environment variables still take
+        precedence over saved values:{" "}
         <code className="rounded bg-sunken px-1 py-0.5 text-muted">STREAMTAPE_LOGIN</code> /{" "}
         <code className="rounded bg-sunken px-1 py-0.5 text-muted">STREAMTAPE_KEY</code>,
         <code className="ml-1 rounded bg-sunken px-1 py-0.5 text-muted">CLOUDINARY_CLOUD_NAME</code> /{" "}
         <code className="rounded bg-sunken px-1 py-0.5 text-muted">CLOUDINARY_API_KEY</code> /{" "}
         <code className="rounded bg-sunken px-1 py-0.5 text-muted">CLOUDINARY_API_SECRET</code>, and{" "}
-        <code className="rounded bg-sunken px-1 py-0.5 text-muted">DATABASE_URL</code>. See the README for details.
+        <code className="rounded bg-sunken px-1 py-0.5 text-muted">DATABASE_URL</code>. Also set{" "}
+        <code className="rounded bg-sunken px-1 py-0.5 text-muted">DATABASE_URL</code> in env
+        so a browser that has never visited the /settings page (e.g. incognito)
+        can reach the stored configuration. See the README for details.
       </p>
     </div>
   );

@@ -1,14 +1,16 @@
 // Client-side persistence backed by browser localStorage.
 //
-// This replaces SQLite for a "get it working now" demo: every bit of app data
-// (video metadata + StreamTape credentials) lives in the browser, so there is
-// NO server-side database and nothing to configure/deploy for storage.
+// This is a fallback/offline layer. Since the last refinement:
+//   - App settings (StreamTape / Cloudinary / Postgres DSN) are now persisted
+//     server-side in PostgreSQL via /api/settings. localStorage only keeps a
+//     bootstrap copy of the Postgres DSN so the /settings page can reach the
+//     settings table even when DATABASE_URL isn't in env.
+//   - The video catalog is a fallback for when no StreamTape credentials are
+//     configured or the remote fetch fails.
 //
-// Caveats (intentional for now):
-//   - Data is per-browser and per-device, and is lost if the user clears
-//     site data. It is NOT shared between visitors.
-//   - Server-rendered output can't read localStorage, so pages that show
-//     stored data are client components that load it in an effect.
+// Caveats (intentional): localStorage is per-browser and per-device, and is
+// lost if the user clears site data. Server-rendered output can't read it, so
+// pages that show stored data are client components that load it in an effect.
 
 import type { AppSettings, Video } from "./types";
 

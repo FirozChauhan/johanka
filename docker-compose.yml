@@ -7,7 +7,8 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      # SQLite database + any runtime settings saved via /settings
+      # Poster frames + any runtime data (persists across restarts). Settings
+      # and metadata live in PostgreSQL (DATABASE_URL), not on disk.
       - johanka-data:/app/data
       # Auto-generated poster frames (persists across restarts)
       - johanka-thumbs:/app/public/thumbs

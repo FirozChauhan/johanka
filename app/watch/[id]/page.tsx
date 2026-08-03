@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { getStoredSettings, getStoredVideo, getStoredVideos } from "@/lib/localstore";
+import { getStoredVideo, getStoredVideos } from "@/lib/localstore";
+import { fetchSettings } from "@/lib/client-settings";
 import { fetchRemoteVideos } from "@/lib/remote";
 import type { Video } from "@/lib/types";
 import { Player } from "@/components/Player";
@@ -25,7 +26,7 @@ export default function WatchPage() {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const creds = getStoredSettings();
+      const creds = await fetchSettings();
       let list: Video[] = getStoredVideos();
       if (creds.streamtape_login && creds.streamtape_key) {
         const remote = await fetchRemoteVideos();
