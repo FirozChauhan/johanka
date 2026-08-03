@@ -32,7 +32,7 @@ export function AuthScreen() {
   const { firebaseEnabled, signingIn, error, signIn, continueAsGuest } = useAuth();
 
   return (
-    <div className="flex w-full max-w-md flex-col py-16 sm:py-24">
+    <div className="flex w-full max-w-md flex-col pb-16 sm:pb-24">
       <div className="flex w-full flex-col items-center rounded-md border border-line bg-surface p-8 shadow-card sm:p-10">
         <Logo />
 
