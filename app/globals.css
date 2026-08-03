@@ -60,6 +60,13 @@ html {
 
 body {
   background-color: var(--color-base);
+  /* Minimal grid texture — barely-there white lines on the near-black base.
+     Reads as depth without competing with content. */
+  background-image:
+    linear-gradient(to right, rgb(255 255 255 / 0.022) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(255 255 255 / 0.022) 1px, transparent 1px);
+  background-size: 44px 44px;
+  background-attachment: fixed;
   color: var(--color-fg);
   -webkit-font-smoothing: antialiased;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
