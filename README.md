@@ -185,8 +185,9 @@ johanka/
 ├─ components/                      Nav, VideoCard/Grid, Player, icons, …
 ├─ lib/
 │  ├─ db.ts                         PostgreSQL pool + videos/settings tables
-│  ├─ settings.ts                   server-side settings resolution (env over DB)
-│  ├─ client-settings.ts            fetch/cache server settings in the browser
+│  ├─ settings.ts                   settings resolution (env over DB)
+│  ├─ server-settings.ts            server-only settings + admin-key checks
+│  ├─ admin-auth.ts                 in-memory admin key for the browser session
 │  ├─ streamtape.ts                 StreamTape API client
 │  ├─ ffmpeg.ts                     poster extraction + duration probe
 │  ├─ format.ts                     bytes/duration/timeAgo helpers
@@ -290,6 +291,53 @@ ffmpeg. Storage & streaming powered by the StreamTape API.
 Env vars take precedence over anything saved in the UI, so you can lock
 credentials down in production while still having a convenient settings page
 in dev.
+
+---
+
+## Admin key (protecting /settings)
+
+The streaming/library pages are public, but the **config is private**. A long,
+random **admin key** unlocks viewing and editing `/settings` (and the other
+admin-only endpoints). It is never stored or sent by a regular visitor.
+
+```bash
+# Generate one (recommended length)
+openssl rand -hex 32        # e.g. 5f3a… (64 hex chars)
+```
+
+Two ways to set it:
+
+1. **Env var (recommended, locks from first boot)**
+   ```bash
+   JOHANKA_ADMIN_KEY=5f3a…   # in .env / Render env / docker-compose
+   ```
+   It always wins, even over a key saved to the database. Perfect for Render —
+   set it in the dashboard once.
+
+2. **From the UI on first run** — if no key is configured anywhere, `/settings`
+   shows a "Create an admin key" form. The key is stored in PostgreSQL as a
+   **SHA-256 hash** (never plaintext), and the page then locks.
+
+### Who sees what
+
+| Endpoint                          | Access |
+|-----------------------------------|--------|
+| `GET /api/streamtape/files`       | public — the library |
+| `POST /api/upload`                | public — uploads |
+| `GET/POST /api/settings`          | **admin key required** |
+| `GET /api/streamtape/health`      | **admin key required** |
+| `GET /api/streamtape/diagnose`    | **admin key required** |
+| `DELETE /api/videos/[id]`         | **admin key required** |
+| `GET /api/videos/[id]/direct`     | **admin key required** |
+
+Send the key as `Authorization: Bearer <key>` (a `?key=` query param also
+works for programmatic use). The `Delete` / `Original file` buttons on the
+watch page only appear once the operator has unlocked `/settings` in that tab.
+
+> **Note:** `POST /api/upload` is intentionally public right now (it's part of
+> the streaming service, matching "accessible by anyone"). Anybody can upload
+> to your StreamTape account and use its quota. If you'd rather keep uploads
+> operator-only, say the word and I'll gate it behind the same admin key.
 
 ---
 

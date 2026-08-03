@@ -11,7 +11,7 @@ import { generateThumbnail, saveThumbnailImage, probeDuration } from "@/lib/ffmp
 import { formatBytes, clampUsername, stripExt } from "@/lib/format";
 import { boundaryFrom, parseMultipartStream } from "@/lib/multipart";
 import type { ParsedUpload } from "@/lib/multipart";
-import { resolveSettings } from "@/lib/settings";
+import { loadEffectiveSettings } from "@/lib/server-settings";
 import { cloudinaryConfigured, uploadPoster } from "@/lib/cloudinary";
 import { upsertVideo } from "@/lib/db";
 
@@ -19,8 +19,10 @@ import { upsertVideo } from "@/lib/db";
   POST /api/upload — uploads a video to StreamTape via FTP and auto-generates
   a poster frame with ffmpeg.
 
-  STATELESS: credentials come from the browser as form fields. The resulting
-  video object is returned to the client, which persists it to localStorage.
+  Settings (StreamTape / Cloudinary / Postgres) are resolved server-side from
+  env + the PostgreSQL settings table — the browser never sends credentials and
+  the client never holds config. The resulting video object is returned to the
+  client as a localStorage fallback catalog.
 
   MEMORY-SAFE FOR LARGE FILES: the multipart body is streamed straight to a
   temp file on disk (lib/multipart), and the FTP upload reads from that file via
@@ -54,17 +56,10 @@ export async function POST(req: NextRequest) {
 
     const { fields, file: videoFile, thumbnail } = parsed;
 
-    // Resolve StreamTape + optional Cloudinary/PostgreSQL settings. Env vars
-    // override whatever the browser sent from /settings, so production can
-    // lock credentials down (see .env.example).
-    const settings = resolveSettings({
-      streamtape_login: fields.login,
-      streamtape_key: fields.key,
-      cloudinary_cloud_name: fields.cloudinary_cloud_name,
-      cloudinary_api_key: fields.cloudinary_api_key,
-      cloudinary_api_secret: fields.cloudinary_api_secret,
-      postgres_connection_string: fields.postgres,
-    });
+    // Resolve StreamTape + optional Cloudinary/PostgreSQL settings server-side
+    // (env vars win over values persisted in PostgreSQL). No credentials are
+    // read from the browser — the client never holds the config.
+    const settings = await loadEffectiveSettings();
 
     const creds: StreamtapeCreds = {
       streamtape_login: settings.streamtape_login,

@@ -149,10 +149,15 @@ export async function ensureSettingsTable(pool: Pool): Promise<void> {
       cloudinary_api_key        TEXT,
       cloudinary_api_secret     TEXT,
       postgres_connection_string TEXT,
+      admin_key_sha             TEXT,
       updated_at                BIGINT,
       CONSTRAINT settings_singleton CHECK (id = TRUE)
     );
   `);
+  // Additive migration guard for databases created before admin keys existed.
+  await pool.query(
+    `ALTER TABLE settings ADD COLUMN IF NOT EXISTS admin_key_sha TEXT`
+  );
 }
 
 export async function loadSettingsFromDb(
@@ -202,5 +207,30 @@ export async function saveSettingsToDb(
       settings.postgres_connection_string ?? null,
       Math.floor(Date.now() / 1000),
     ]
+  );
+}
+
+/** Return the stored SHA-256 of the admin key (hex), or null if none set. */
+export async function getAdminKeySha(
+  connectionString: string
+): Promise<string | null> {
+  const pool = getPool(connectionString);
+  await ensureSettingsTable(pool);
+  const res = await pool.query(`SELECT admin_key_sha FROM settings WHERE id = TRUE`);
+  if (res.rows.length === 0) return null;
+  return res.rows[0].admin_key_sha ?? null;
+}
+
+/** Store the SHA-256 of the admin key (single settings row). */
+export async function setAdminKeySha(
+  connectionString: string,
+  shaHex: string
+): Promise<void> {
+  const pool = getPool(connectionString);
+  await ensureSettingsTable(pool);
+  await pool.query(
+    `INSERT INTO settings (id, admin_key_sha) VALUES (TRUE, $1)
+     ON CONFLICT (id) DO UPDATE SET admin_key_sha = EXCLUDED.admin_key_sha`,
+    [shaHex]
   );
 }

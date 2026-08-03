@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { useCallback, useRef, useState } from "react";
 import { UploadIcon, XIcon, CheckIcon, FileIcon } from "@/components/icons";
 import { upsertStoredVideo } from "@/lib/localstore";
-import { fetchSettings } from "@/lib/client-settings";
 import type { Video } from "@/lib/types";
 
 type Stage =
@@ -60,17 +59,9 @@ export default function UploadPage() {
     form.append("title", title);
     form.append("description", description);
     if (thumb) form.append("thumbnail", thumb);
-    // Credentials: the server is stateless, so send the stored StreamTape
-    // creds along so it can forward the file. Cloudinary + Postgres settings
-    // ride along so the poster upload / catalog enrichment happen server-side.
-    // The settings come from the server (PostgreSQL), not localStorage.
-    const settings = await fetchSettings();
-    form.append("login", settings.streamtape_login || "");
-    form.append("key", settings.streamtape_key || "");
-    form.append("cloudinary_cloud_name", settings.cloudinary_cloud_name || "");
-    form.append("cloudinary_api_key", settings.cloudinary_api_key || "");
-    form.append("cloudinary_api_secret", settings.cloudinary_api_secret || "");
-    form.append("postgres", settings.postgres_connection_string || "");
+    // No credentials are sent — the server resolves StreamTape / Cloudinary /
+    // Postgres settings itself (env + the settings table). The client never
+    // holds the config.
 
     // Use XMLHttpRequest instead of fetch() so we get REAL upload progress
     // via upload.onprogress. fetch() has no way to track upload bytes.

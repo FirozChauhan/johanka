@@ -1,29 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { deleteFile } from "@/lib/streamtape";
 import type { StreamtapeCreds } from "@/lib/streamtape";
+import { isAdminRequest, loadEffectiveSettings } from "@/lib/server-settings";
 
 /*
-  DELETE /api/videos/[id]?login=...&key=...&streamtape_id=...
+  DELETE /api/videos/[id]?streamtape_id=...
 
-  Stateless (no DB): the browser already removed the video from its own
-  localStorage. This route only best-effort deletes the remote file from
-  StreamTape using the credentials + file id the client passes in.
+  ADMIN ONLY: deletes the remote file from StreamTape. Credentials are resolved
+  server-side (env wins over the DB), so a random visitor can't delete the
+  library.
 */
 export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const { searchParams } = new URL(req.url);
+  if (!(await isAdminRequest(req))) {
+    return NextResponse.json({ locked: true, error: "Admin key required." }, { status: 401 });
+  }
 
+  const { searchParams } = new URL(req.url);
+  const settings = await loadEffectiveSettings();
   const creds: StreamtapeCreds = {
-    streamtape_login: (searchParams.get("login") ?? "").trim(),
-    streamtape_key: (searchParams.get("key") ?? "").trim(),
+    streamtape_login: settings.streamtape_login,
+    streamtape_key: settings.streamtape_key,
   };
   const streamtapeId = searchParams.get("streamtape_id") ?? "";
 
   if (!streamtapeId || !creds.streamtape_login || !creds.streamtape_key) {
-    // Nothing to delete remotely — treat as success (local metadata already gone).
+    // Nothing to delete remotely — treat as success.
     return NextResponse.json({ ok: true, note: "no remote file to delete" });
   }
 
@@ -36,4 +41,3 @@ export async function DELETE(
   void id;
   return NextResponse.json({ ok: true });
 }
-

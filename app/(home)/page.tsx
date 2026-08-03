@@ -4,7 +4,6 @@ import Link from "next/link";
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { getStoredVideos } from "@/lib/localstore";
-import { fetchSettings } from "@/lib/client-settings";
 import { fetchRemoteVideos } from "@/lib/remote";
 import type { Video } from "@/lib/types";
 import { VideoGrid } from "@/components/VideoGrid";
@@ -18,18 +17,12 @@ function HomeContent() {
   const query = (searchParams.get("q") ?? "").trim().toLowerCase();
   const [videos, setVideos] = useState<Video[]>([]);
 
-  // When StreamTape credentials are configured, the library comes straight
-  // from the StreamTape account (no localStorage catalog needed). We only fall
-  // back to the localStorage list when there are no credentials or the remote
-  // fetch fails.
+  // The library comes straight from the StreamTape account (resolved
+  // server-side). We only fall back to the localStorage list when the remote
+  // fetch fails or no credentials are configured.
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const creds = await fetchSettings();
-      if (!creds.streamtape_login || !creds.streamtape_key) {
-        if (!cancelled) setVideos(getStoredVideos());
-        return;
-      }
       const remote = await fetchRemoteVideos();
       if (cancelled) return;
       setVideos(remote.length > 0 ? remote : getStoredVideos());

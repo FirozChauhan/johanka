@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { getStoredVideo, getStoredVideos } from "@/lib/localstore";
-import { fetchSettings } from "@/lib/client-settings";
 import { fetchRemoteVideos } from "@/lib/remote";
 import type { Video } from "@/lib/types";
 import { Player } from "@/components/Player";
@@ -20,19 +19,16 @@ export default function WatchPage() {
   const [video, setVideo] = useState<Video | null>(null);
   const [videos, setVideos] = useState<Video[]>([]);
 
-  // The library now mirrors the StreamTape account: when credentials are set we
-  // resolve the video from the remote file list (id == StreamTape file id).
+  // The library mirrors the StreamTape account. When credentials are configured
+  // the video is resolved from the remote file list (id == StreamTape file id).
   // localStorage is only a fallback when we can't reach the account.
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const creds = await fetchSettings();
       let list: Video[] = getStoredVideos();
-      if (creds.streamtape_login && creds.streamtape_key) {
-        const remote = await fetchRemoteVideos();
-        if (cancelled) return;
-        if (remote.length > 0) list = remote;
-      }
+      const remote = await fetchRemoteVideos();
+      if (cancelled) return;
+      if (remote.length > 0) list = remote;
       if (cancelled) return;
       setVideos(list);
       setVideo(list.find((v) => v.id === id) ?? getStoredVideo(id));

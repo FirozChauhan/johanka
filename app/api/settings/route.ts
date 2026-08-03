@@ -1,136 +1,157 @@
 import { NextRequest, NextResponse } from "next/server";
 import { loadSettingsFromDb, saveSettingsToDb } from "@/lib/db";
+import {
+  adminKeyConfigured,
+  envAdminKey,
+  envDsn,
+  isAdminRequest,
+  overlayEnv,
+  storeAdminKey,
+} from "@/lib/server-settings";
 import type { AppSettings } from "@/lib/types";
 
 /*
   GET  /api/settings?postgres=...bootstrap-dsn...
   POST /api/settings
 
-  Server-side settings persistence. Settings are stored in the PostgreSQL
-  `settings` table so they survive across browsers, profiles, and incognito
-  windows (previously they lived only in browser localStorage).
+  The operator config. Settings are stored in the PostgreSQL `settings` table
+  (survive across browsers / incognito) and are PROTECTED by an admin key:
+    1. JOHANKA_ADMIN_KEY env var, if set (always wins), or
+    2. a SHA-256 hash saved to the settings table from the /settings UI.
 
-  The connection string that HOSTS the settings table is resolved as:
-    1. env DATABASE_URL / POSTGRES_URL   (recommended — required for
-       persistence in a browser that has never seen localStorage)
-    2. the `postgres` query param         (bootstrap DSN the /settings UI
-       may save so a previously UI-configured install keeps working)
+  The connection string that HOSTS the settings table resolves as env
+  DATABASE_URL / POSTGRES_URL first, then the `?postgres=` query param / body
+  field (bootstrap for UI-configured installs).
+
+  Lock behavior:
+    - No key configured yet  -> 200 { needsSetup: true } and only key creation
+      is allowed (POST { admin_key }). Nothing else is exposed.
+    - Key configured         -> GET/POST require `Authorization: Bearer <key>`
+      (or ?key=). Wrong/missing key returns 401 { locked: true }.
 
   Env vars (STREAMTAPE_*, CLOUDINARY_*, DATABASE_URL) always win over values
-  stored in the database, matching lib/settings.ts.
+  stored in the database.
 */
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function pick(env: string | undefined, fallback?: string): string | undefined {
-  const fromEnv = env?.trim();
-  if (fromEnv !== undefined && fromEnv !== "") return fromEnv;
-  const fromFallback = fallback?.trim();
-  return fromFallback || undefined;
+function settingsDsn(req: NextRequest, body?: Partial<AppSettings>): string | undefined {
+  const env = envDsn();
+  if (env) return env;
+  if (body?.postgres_connection_string?.trim()) return body.postgres_connection_string.trim();
+  return new URL(req.url).searchParams.get("postgres")?.trim() || undefined;
 }
 
-/** Effective settings = DB row overlaid with env vars. */
-function effectiveSettings(db: AppSettings): AppSettings {
-  return {
-    streamtape_login: pick(process.env.STREAMTAPE_LOGIN, db.streamtape_login),
-    streamtape_key: pick(process.env.STREAMTAPE_KEY, db.streamtape_key),
-    cloudinary_cloud_name: pick(
-      process.env.CLOUDINARY_CLOUD_NAME,
-      db.cloudinary_cloud_name
-    ),
-    cloudinary_api_key: pick(process.env.CLOUDINARY_API_KEY, db.cloudinary_api_key),
-    cloudinary_api_secret: pick(
-      process.env.CLOUDINARY_API_SECRET,
-      db.cloudinary_api_secret
-    ),
-    postgres_connection_string: pick(
-      process.env.DATABASE_URL || process.env.POSTGRES_URL,
-      db.postgres_connection_string
-    ),
-  };
-}
-
-/** Resolve which PostgreSQL instance holds the settings table. */
-function settingsDsn(
-  client?: string | undefined,
-  queryDsn?: string | undefined
-): string | undefined {
-  const fromEnv = (process.env.DATABASE_URL || process.env.POSTGRES_URL)?.trim();
-  if (fromEnv) return fromEnv;
-  const fromClient = client?.trim();
-  if (fromClient) return fromClient;
-  const fromQuery = queryDsn?.trim();
-  return fromQuery || undefined;
+function locked() {
+  return NextResponse.json({ locked: true, error: "Admin key required." }, { status: 401 });
 }
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
-  const dsn = settingsDsn(undefined, searchParams.get("postgres") ?? undefined);
+  const dsn = settingsDsn(req);
 
-  if (!dsn) {
-    // No Postgres configured yet — only env overrides exist.
-    return NextResponse.json({ configured: false, settings: effectiveSettings({}) });
+  // Config locked -> require a valid admin key.
+  if (await adminKeyConfigured(dsn)) {
+    if (!(await isAdminRequest(req, dsn))) return locked();
+    if (!dsn) {
+      return NextResponse.json({ locked: false, configured: false, settings: overlayEnv({}) });
+    }
+    try {
+      const db = await loadSettingsFromDb(dsn);
+      return NextResponse.json({ locked: false, configured: true, settings: overlayEnv(db) });
+    } catch (err) {
+      console.warn("[settings] read failed:", (err as Error).message);
+      return NextResponse.json({
+        locked: false,
+        configured: false,
+        error: err instanceof Error ? err.message : "Could not read settings.",
+        settings: overlayEnv({}),
+      });
+    }
   }
 
-  try {
-    const db = await loadSettingsFromDb(dsn);
-    return NextResponse.json({ configured: true, settings: effectiveSettings(db) });
-  } catch (err) {
-    console.warn("[settings] read failed:", (err as Error).message);
-    return NextResponse.json({
-      configured: false,
-      error: err instanceof Error ? err.message : "Could not read settings.",
-      settings: effectiveSettings({}),
-    });
-  }
+  // No key yet -> offer setup only; never expose settings.
+  return NextResponse.json({ locked: false, needsSetup: true, configured: Boolean(dsn), settings: {} });
 }
 
 export async function POST(req: NextRequest) {
-  const body = (await req.json().catch(() => ({}))) as Partial<AppSettings>;
-  const dsn = settingsDsn(body.postgres_connection_string);
+  const body = (await req.json().catch(() => ({}))) as Partial<AppSettings> & { admin_key?: string };
+  const dsn = settingsDsn(req, body);
+  const keyConfigured = await adminKeyConfigured(dsn);
 
+  // First-run: no key configured -> the ONLY thing allowed is setting one.
+  if (!keyConfigured) {
+    const newKey = body.admin_key?.trim();
+    if (!newKey) {
+      return NextResponse.json(
+        { needsSetup: true, error: "No admin key configured. Create one to lock the settings." },
+        { status: 400 }
+      );
+    }
+    if (newKey.length < 16) {
+      return NextResponse.json(
+        { needsSetup: true, error: "Admin key is too short — use at least 16 characters (e.g. openssl rand -hex 32)." },
+        { status: 400 }
+      );
+    }
+    if (!dsn) {
+      return NextResponse.json(
+        { needsSetup: true, error: "No PostgreSQL connection string configured. Set DATABASE_URL in env first." },
+        { status: 400 }
+      );
+    }
+    try {
+      await storeAdminKey(dsn, newKey);
+      console.log("[settings] admin key created (SHA-256 stored).");
+      return NextResponse.json({ locked: true });
+    } catch (err) {
+      console.warn("[settings] store key failed:", (err as Error).message);
+      return NextResponse.json({ locked: true, error: err instanceof Error ? err.message : "Could not store the key." }, { status: 500 });
+    }
+  }
+
+  // Key configured -> require a valid key for every write.
+  if (!(await isAdminRequest(req, dsn))) return locked();
   if (!dsn) {
-    return NextResponse.json(
-      {
-        configured: false,
-        error:
-          "No PostgreSQL connection string configured. Set DATABASE_URL (recommended, e.g. in .env / docker-compose) or fill in the connection string below.",
-      },
-      { status: 400 }
-    );
+    return NextResponse.json({ locked: false, configured: false, error: "No PostgreSQL connection string configured." }, { status: 400 });
   }
 
   try {
     const existing = await loadSettingsFromDb(dsn);
-
     const next: AppSettings = {
       ...existing,
       streamtape_login: pick(body.streamtape_login, existing.streamtape_login),
-      cloudinary_cloud_name: pick(
-        body.cloudinary_cloud_name,
-        existing.cloudinary_cloud_name
-      ),
+      cloudinary_cloud_name: pick(body.cloudinary_cloud_name, existing.cloudinary_cloud_name),
       postgres_connection_string: dsn,
     };
-    // Secrets are only replaced when the user typed a new value; blank means
-    // "keep the stored one".
+    // Secrets are only replaced when a new value is provided; blank = keep.
     if (body.streamtape_key?.trim()) next.streamtape_key = body.streamtape_key.trim();
-    if (body.cloudinary_api_key?.trim())
-      next.cloudinary_api_key = body.cloudinary_api_key.trim();
-    if (body.cloudinary_api_secret?.trim())
-      next.cloudinary_api_secret = body.cloudinary_api_secret.trim();
+    if (body.cloudinary_api_key?.trim()) next.cloudinary_api_key = body.cloudinary_api_key.trim();
+    if (body.cloudinary_api_secret?.trim()) next.cloudinary_api_secret = body.cloudinary_api_secret.trim();
 
     await saveSettingsToDb(dsn, next);
-    return NextResponse.json({ configured: true, settings: effectiveSettings(next) });
+
+    // Optional: rotate the admin key (only meaningful when not env-managed).
+    const rotate = body.admin_key?.trim();
+    if (rotate && !envAdminKey()) {
+      if (rotate.length < 16) {
+        return NextResponse.json({ locked: false, configured: true, error: "New admin key is too short — use at least 16 characters." }, { status: 400 });
+      }
+      await storeAdminKey(dsn, rotate);
+      console.log("[settings] admin key rotated.");
+    }
+
+    return NextResponse.json({ locked: false, configured: true, settings: overlayEnv(next) });
   } catch (err) {
     console.warn("[settings] save failed:", (err as Error).message);
     return NextResponse.json(
-      {
-        configured: false,
-        error: err instanceof Error ? err.message : "Could not save settings.",
-      },
+      { locked: false, configured: false, error: err instanceof Error ? err.message : "Could not save settings." },
       { status: 500 }
     );
   }
+}
+
+function pick(env: string | undefined, fallback?: string): string | undefined {
+  const fromClient = env?.trim();
+  return fromClient || fallback?.trim() || undefined;
 }

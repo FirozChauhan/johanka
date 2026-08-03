@@ -1,19 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAccountInfo } from "@/lib/streamtape";
 import type { StreamtapeCreds } from "@/lib/streamtape";
+import { isAdminRequest, loadEffectiveSettings } from "@/lib/server-settings";
 
 /*
-  GET /api/streamtape/health?login=...&key=...
+  GET /api/streamtape/health
 
-  Stateless: the browser sends the stored credentials as query params (there is
-  no server DB anymore). Reports whether StreamTape is configured and, when it
-  is, validates the credentials against /account/info.
+  ADMIN ONLY: resolves credentials server-side (env wins over the DB) and
+  validates them against /account/info. Returns whether StreamTape is
+  configured.
 */
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
+  if (!(await isAdminRequest(req))) {
+    return NextResponse.json({ locked: true, error: "Admin key required." }, { status: 401 });
+  }
+
+  const settings = await loadEffectiveSettings();
   const creds: StreamtapeCreds = {
-    streamtape_login: (searchParams.get("login") ?? "").trim(),
-    streamtape_key: (searchParams.get("key") ?? "").trim(),
+    streamtape_login: settings.streamtape_login,
+    streamtape_key: settings.streamtape_key,
   };
 
   if (!creds.streamtape_login || !creds.streamtape_key) {
@@ -26,8 +31,6 @@ export async function GET(req: NextRequest) {
 
   try {
     const account = await getAccountInfo(creds);
-    // A successful round-trip that yields no account object means the API
-    // rejected the credentials — report it rather than showing "Connected".
     if (!account) {
       return NextResponse.json({
         configured: true,
@@ -48,4 +51,3 @@ export async function GET(req: NextRequest) {
     );
   }
 }
-

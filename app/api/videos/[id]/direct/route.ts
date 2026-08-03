@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDirectLink } from "@/lib/streamtape";
 import type { StreamtapeCreds } from "@/lib/streamtape";
+import { isAdminRequest, loadEffectiveSettings } from "@/lib/server-settings";
 
 /*
-  GET /api/videos/[id]/direct?login=...&key=...&streamtape_id=...
+  GET /api/videos/[id]/direct?streamtape_id=...
 
-  Stateless (no DB) — the client passes the stored credentials and the
-  StreamTape file id. Resolves StreamTape's temporary direct mp4 link.
-  Direct links expire, so this is resolved on demand.
+  ADMIN ONLY: resolves StreamTape's temporary direct mp4 link. Credentials are
+  resolved server-side (env wins over the DB). Direct links expire, so this is
+  resolved on demand.
 */
 export const runtime = "nodejs";
 
@@ -16,11 +17,15 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  const { searchParams } = new URL(req.url);
+  if (!(await isAdminRequest(req))) {
+    return NextResponse.json({ locked: true, error: "Admin key required." }, { status: 401 });
+  }
 
+  const { searchParams } = new URL(req.url);
+  const settings = await loadEffectiveSettings();
   const creds: StreamtapeCreds = {
-    streamtape_login: (searchParams.get("login") ?? "").trim(),
-    streamtape_key: (searchParams.get("key") ?? "").trim(),
+    streamtape_login: settings.streamtape_login,
+    streamtape_key: settings.streamtape_key,
   };
   const streamtapeId = searchParams.get("streamtape_id") ?? "";
 
@@ -42,4 +47,3 @@ export async function GET(
   void id;
   return NextResponse.json({ direct_url: direct });
 }
-

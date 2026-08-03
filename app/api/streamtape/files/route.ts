@@ -1,17 +1,18 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { listFiles, embedUrl } from "@/lib/streamtape";
 import type { StreamtapeCreds } from "@/lib/streamtape";
 import { fetchVideosMeta } from "@/lib/db";
 import type { DbVideoMeta } from "@/lib/db";
 import { formatBytes, stripExt } from "@/lib/format";
 import type { Video } from "@/lib/types";
+import { loadEffectiveSettings } from "@/lib/server-settings";
 
 /*
-  GET /api/streamtape/files?login=...&key=...
+  GET /api/streamtape/files
 
-  Stateless (no DB): the browser sends its stored credentials and we pull the
-  account's file list straight from StreamTape's /file/listfolder. This is the
-  single source of truth for the library — no localStorage video catalog.
+  PUBLIC: lists the library straight from the StreamTape account. Credentials
+  are resolved server-side (env vars win over the PostgreSQL settings table),
+  so the browser never holds config and the page is identical for every visitor.
 
   Results are cached in memory for a short TTL so repeated page loads don't
   hammer the StreamTape API.
@@ -22,11 +23,11 @@ export const dynamic = "force-dynamic";
 const CACHE_TTL_MS = 30_000;
 const cache = new Map<string, { at: number; videos: Video[] }>();
 
-export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
+export async function GET() {
+  const settings = await loadEffectiveSettings();
   const creds: StreamtapeCreds = {
-    streamtape_login: (searchParams.get("login") ?? "").trim(),
-    streamtape_key: (searchParams.get("key") ?? "").trim(),
+    streamtape_login: settings.streamtape_login,
+    streamtape_key: settings.streamtape_key,
   };
 
   if (!creds.streamtape_login || !creds.streamtape_key) {
@@ -34,11 +35,7 @@ export async function GET(req: NextRequest) {
   }
 
   // Optional Postgres enrichment (env vars win over the /settings value).
-  const postgresDsn =
-    process.env.DATABASE_URL ||
-    process.env.POSTGRES_URL ||
-    (searchParams.get("postgres") ?? "").trim() ||
-    undefined;
+  const postgresDsn = settings.postgresConnectionString;
 
   const cacheKey = `${creds.streamtape_login}:${creds.streamtape_key}:${postgresDsn ?? ""}`;
   const hit = cache.get(cacheKey);

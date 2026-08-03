@@ -5,14 +5,8 @@ import { useEffect, useState } from "react";
 import type { Video } from "@/lib/types";
 import { pushHistory } from "./ContinueWatching";
 import { CopyIcon, CheckIcon, LinkIcon, TrashIcon } from "./icons";
-import { fetchSettings } from "@/lib/client-settings";
+import { authHeaders, isAdmin } from "@/lib/admin-auth";
 import { removeStoredVideo } from "@/lib/localstore";
-
-/* Credential query string for the stateless API routes (from server settings). */
-async function credsQuery(): Promise<string> {
-  const s = await fetchSettings();
-  return `login=${encodeURIComponent(s.streamtape_login || "")}&key=${encodeURIComponent(s.streamtape_key || "")}`;
-}
 
 /*
   Action bar for the watch page: marks the video in the Continue-watching
@@ -23,6 +17,9 @@ export function WatchActions({ video }: { video: Video }) {
   const [copied, setCopied] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [directLoading, setDirectLoading] = useState(false);
+  // Admin-only actions (Delete / Original file) are hidden from the public;
+  // they become available once the operator unlocks /settings in this session.
+  const admin = isAdmin();
   const url = typeof window !== "undefined" ? window.location.href : `/watch/${video.id}`;
 
   useEffect(() => {
@@ -42,15 +39,15 @@ export function WatchActions({ video }: { video: Video }) {
   async function openOriginal() {
     setDirectLoading(true);
     try {
-      const q = await credsQuery();
       const res = await fetch(
-        `/api/videos/${video.id}/direct?${q}&streamtape_id=${encodeURIComponent(video.streamtape_id ?? "")}`
+        `/api/videos/${video.id}/direct?streamtape_id=${encodeURIComponent(video.streamtape_id ?? "")}`,
+        { headers: authHeaders() }
       );
       const data = await res.json();
       if (data.direct_url) {
         window.open(data.direct_url, "_blank", "noopener");
       } else {
-        alert(data.error || "Could not resolve a direct link.");
+        alert(data.error || data.locked ? "Admin key required." : "Could not resolve a direct link.");
       }
     } catch {
       alert("Request failed.");
@@ -63,11 +60,10 @@ export function WatchActions({ video }: { video: Video }) {
     if (!confirm("Delete this video permanently?")) return;
     setDeleting(true);
     try {
-      // Best-effort remote delete; the video is gone from localStorage either way.
-      const q = await credsQuery();
+      // Best-effort remote delete; local metadata is removed either way.
       await fetch(
-        `/api/videos/${video.id}?${q}&streamtape_id=${encodeURIComponent(video.streamtape_id ?? "")}`,
-        { method: "DELETE" }
+        `/api/videos/${video.id}?streamtape_id=${encodeURIComponent(video.streamtape_id ?? "")}`,
+        { method: "DELETE", headers: authHeaders() }
       ).catch(() => {});
       removeStoredVideo(video.id);
       router.push("/");
@@ -91,19 +87,23 @@ export function WatchActions({ video }: { video: Video }) {
         {copied ? "Copied" : "Copy link"}
       </button>
 
-      <button className={btn} onClick={openOriginal} disabled={directLoading}>
-        <LinkIcon className="h-4 w-4" />
-        {directLoading ? "Resolving…" : "Original file"}
-      </button>
+      {admin && (
+        <>
+          <button className={btn} onClick={openOriginal} disabled={directLoading}>
+            <LinkIcon className="h-4 w-4" />
+            {directLoading ? "Resolving…" : "Original file"}
+          </button>
 
-      <button
-        className="ml-auto inline-flex items-center gap-2 rounded-lg border border-line bg-surface px-3 py-1.5 text-sm text-muted transition hover:border-danger/50 hover:text-danger disabled:opacity-50"
-        onClick={remove}
-        disabled={deleting}
-      >
-        <TrashIcon className="h-4 w-4" />
-        {deleting ? "Deleting…" : "Delete"}
-      </button>
+          <button
+            className="ml-auto inline-flex items-center gap-2 rounded-lg border border-line bg-surface px-3 py-1.5 text-sm text-muted transition hover:border-danger/50 hover:text-danger disabled:opacity-50"
+            onClick={remove}
+            disabled={deleting}
+          >
+            <TrashIcon className="h-4 w-4" />
+            {deleting ? "Deleting…" : "Delete"}
+          </button>
+        </>
+      )}
     </div>
   );
 }

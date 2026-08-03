@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import dns from "node:dns/promises";
 import { getAccountInfo } from "@/lib/streamtape";
 import type { StreamtapeCreds } from "@/lib/streamtape";
+import { isAdminRequest, loadEffectiveSettings } from "@/lib/server-settings";
 
 /*
-  GET /api/streamtape/diagnose?login=...&key=...
+  GET /api/streamtape/diagnose
 
-  Stateless (no DB): credentials come from the browser. Runs a set of
-  connectivity checks against StreamTape and returns a structured report.
-  Use this when "fetch failed" shows up — it tells you whether the problem is
-  DNS, a proxy, TLS, or the API rejecting creds.
+  ADMIN ONLY: resolves credentials server-side (env wins over the DB) and runs
+  connectivity checks against StreamTape, returning a structured report. Use
+  this when "fetch failed" shows up.
 */
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -17,10 +17,14 @@ export const dynamic = "force-dynamic";
 const HOST = "api.streamtape.com";
 
 export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
+  if (!(await isAdminRequest(req))) {
+    return NextResponse.json({ locked: true, error: "Admin key required." }, { status: 401 });
+  }
+
+  const settings = await loadEffectiveSettings();
   const creds: StreamtapeCreds = {
-    streamtape_login: (searchParams.get("login") ?? "").trim(),
-    streamtape_key: (searchParams.get("key") ?? "").trim(),
+    streamtape_login: settings.streamtape_login,
+    streamtape_key: settings.streamtape_key,
   };
   const configured = Boolean(creds.streamtape_login && creds.streamtape_key);
 
@@ -31,7 +35,6 @@ export async function GET(req: NextRequest) {
     process.env.http_proxy ||
     null;
 
-  // 1. DNS — can we resolve the host at all?
   let dnsResult: { ok: boolean; addresses?: string[]; error?: string };
   try {
     const records = await dns.lookup(HOST, { all: true });
@@ -43,7 +46,6 @@ export async function GET(req: NextRequest) {
     dnsResult = { ok: false, error: (err as Error).message };
   }
 
-  // 2. API call — does the real request succeed (and are creds valid)?
   let api: { ok: boolean; configured: boolean; error?: string; account?: unknown };
   if (!configured) {
     api = { ok: false, configured: false, error: "Credentials not configured." };
@@ -85,4 +87,3 @@ function suggest(
   }
   return "Everything looks good — StreamTape is reachable and credentials are valid.";
 }
-
