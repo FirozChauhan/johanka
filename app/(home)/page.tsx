@@ -8,6 +8,7 @@ import { fetchRemoteVideos } from "@/lib/remote";
 import type { Video } from "@/lib/types";
 import { VideoGrid } from "@/components/VideoGrid";
 import { ContinueWatching } from "@/components/ContinueWatching";
+import { HeroVideo } from "@/components/HeroVideo";
 import { PlusIcon, UploadIcon } from "@/components/icons";
 
 function HomeContent() {
@@ -40,6 +41,13 @@ function HomeContent() {
     ? `${filtered.length} result${filtered.length === 1 ? "" : "s"} for \u201c${query}\u201d`
     : `${filtered.length} video${filtered.length === 1 ? "" : "s"} in your library`;
 
+  // The hero showcases the newest video. It's hidden while searching so
+  // results always read as search results, not a landing page.
+  const featured =
+    !searching && videos.length > 0
+      ? [...videos].sort((a, b) => b.created_at - a.created_at)[0]
+      : null;
+
   // Show a skeleton while the library is still loading so the empty state
   // never flashes on first paint.
   if (loading) {
@@ -69,6 +77,13 @@ function HomeContent() {
           <PlusIcon className="h-4 w-4" /> New video
         </Link>
       </header>
+
+      {/* Featured hero — newest video, hidden during search */}
+      {featured && (
+        <div className="mb-8">
+          <HeroVideo video={featured} />
+        </div>
+      )}
 
       {filtered.length === 0 ? (
         <EmptyState searching={searching} />
@@ -120,6 +135,10 @@ function EmptyState({ searching }: { searching: boolean }) {
 function HomeLoading() {
   return (
     <div className="space-y-8">
+      {/* Hero skeleton */}
+      <div className="mb-8">
+        <div className="shimmer relative h-[250px] w-full bg-surface sm:h-[320px] lg:h-[360px]" />
+      </div>
       <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4">
         {Array.from({ length: 8 }).map((_, i) => (
           <div key={i} className="space-y-3">
