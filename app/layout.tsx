@@ -12,18 +12,10 @@ export const metadata: Metadata = {
     "Self-hosted, minimal video streaming powered by StreamTape for free storage.",
 };
 
-/* A thin brand strip: "Johanka" on the left, "FIROZ" on the right. */
-function BrandBar({ edge }: { edge: "top" | "bottom" }) {
-  const bar =
-    "flex h-9 items-center justify-between px-4 text-xs sm:px-6";
+/* A thin footer strip: "Johanka" on the left, "FIROZ" on the right. */
+function FooterBar() {
   return (
-    <div
-      className={`${bar} ${
-        edge === "top"
-          ? "border-b border-line"
-          : "sticky bottom-0 z-40 border-t border-line bg-base/95 backdrop-blur-xl"
-      }`}
-    >
+    <div className="sticky bottom-0 z-40 flex h-9 items-center justify-between border-t border-line bg-base/95 px-4 text-xs backdrop-blur-xl sm:px-6">
       <Link
         href="/"
         className="font-semibold tracking-tight text-fg transition hover:text-accent"
@@ -46,7 +38,6 @@ export default function RootLayout({
     <html lang="en" className={inter.variable}>
       <body className="min-h-screen font-sans">
         <div className="flex min-h-screen flex-col">
-          <BrandBar edge="top" />
           <TopBar />
           <div className="mx-auto flex w-full max-w-[1440px] flex-1">
             <Sidebar />
@@ -54,7 +45,7 @@ export default function RootLayout({
               {children}
             </main>
           </div>
-          <BrandBar edge="bottom" />
+          <FooterBar />
         </div>
       </body>
     </html>
