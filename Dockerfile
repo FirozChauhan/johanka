@@ -18,6 +18,14 @@ COPY package.json package-lock.json* ./
 RUN npm ci
 
 COPY . .
+
+# Embed the app version into the bundle. .git is excluded from the image (see
+# .dockerignore) so git-based version resolution can't run inside the build;
+# instead the version is injected from the host via the APP_VERSION build arg
+# (e.g. `APP_VERSION="$(git describe --tags --always)" docker compose build`).
+# When the arg is empty the build still succeeds and falls back to package.json.
+ARG APP_VERSION=
+ENV NEXT_PUBLIC_APP_VERSION=${APP_VERSION}
 RUN npm run build
 
 # ---- Runtime stage ---------------------------------------------------------

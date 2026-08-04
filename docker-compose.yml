@@ -1,6 +1,12 @@
 services:
   johanka:
-    build: .
+    build:
+      context: .
+      # Pass the host's git version so the footer stays in sync with the
+      # latest commit even though .git is excluded from the image. Build with:
+      #   APP_VERSION="$(git describe --tags --always)" docker compose up --build
+      args:
+        APP_VERSION: ${APP_VERSION:-}
     image: johanka:latest
     container_name: johanka
     restart: unless-stopped

@@ -25,21 +25,18 @@ function pkgVersion(): string {
 function currentVersion(): string {
   const env = process.env.NEXT_PUBLIC_APP_VERSION?.trim();
   if (env) return env;
+  // Derive the version straight from git so the footer always reflects the
+  // exact deployed commit:
+  //   - exactly on a tag:   "v1.9.16"
+  //   - ahead of a tag:     "v1.9.15-3-gabc1234"  (nearest tag + commits + short sha)
+  //   - no reachable tags:  the short commit sha
   try {
-    const tag = execSync("git describe --tags --abbrev=0", {
+    const describe = execSync("git describe --tags --always", {
       encoding: "utf8",
     }).trim();
-    if (tag) return tag;
+    if (describe) return describe;
   } catch {
-    /* no .git / no tags in this environment */
-  }
-  try {
-    const sha = execSync("git rev-parse --short HEAD", {
-      encoding: "utf8",
-    }).trim();
-    if (sha) return sha;
-  } catch {
-    /* ignore */
+    /* no .git / no tags in this environment (e.g. Docker, Render) */
   }
   const pkg = pkgVersion();
   if (pkg) return `v${pkg}`;
