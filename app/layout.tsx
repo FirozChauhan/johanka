@@ -48,7 +48,7 @@ function FooterBar() {
   const version = process.env.NEXT_PUBLIC_APP_VERSION || "";
   return (
     <footer className="sticky bottom-0 z-40 border-t border-line bg-base/95 backdrop-blur-xl">
-      <div className="mx-auto flex max-w-[1440px] flex-col items-center justify-between gap-2 px-4 py-4 sm:flex-row sm:items-center sm:px-6 md:px-8">
+      <div className="mx-auto flex max-w-[1440px] flex-col items-center justify-between gap-2 px-4 py-4 sm:flex-row sm:items-center">
         <Link
           href="/"
           className="inline-flex items-center gap-1.5 text-sm font-semibold tracking-tight text-fg transition hover:text-accent"
