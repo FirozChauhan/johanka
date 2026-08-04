@@ -95,13 +95,8 @@ export function TopBar() {
   return (
     <header className="sticky top-0 z-40 border-b border-line bg-base/90 backdrop-blur-xl">
       <div className="mx-auto flex h-14 max-w-[1440px] items-center gap-2 px-4 sm:gap-3">
-        {/* Johanka text logo */}
-        <Link
-          href="/"
-          className="text-[15px] font-semibold tracking-tight text-fg transition hover:text-accent"
-        >
-          Johanka
-        </Link>
+        {/* Brand logo */}
+        <Logo />
 
         <div className="ml-auto hidden w-64 md:block">
           <Suspense fallback={null}>
