@@ -28,5 +28,3 @@ next-env.d.ts
 # runtime data (sqlite database lives here, keep it out of git)
 /data/*
 !/data/.gitkeep
-/public/thumbs/*
-!/public/thumbs/.gitkeep
