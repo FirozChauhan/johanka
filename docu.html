@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Johanka — Project Documentation</title>
+<style>
+:root{--base:#0b0d10;--surface:#121417;--raised:#1a1d21;--sunken:#0e1013;--fg:#f1f2f4;--muted:#9aa1ab;--faint:#616873;--line-soft:rgba(255,255,255,0.18);--accent:#7469ff;--accent-strong:#8a7bff;--success:#34d17e;--danger:#f0504e;--amber:#f5b945}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scrollbar-gutter:stable}
+body{background:var(--base);background-image:linear-gradient(to right,rgba(255,255,255,0.022) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,0.022) 1px,transparent 1px);background-size:44px 44px;color:var(--fg);font-family:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;line-height:1.6}
+::selection{background:rgba(116,105,255,0.35);color:#fff}
+a{color:var(--accent-strong);text-decoration:none}a:hover{text-decoration:underline}
+.wrap{display:grid;grid-template-columns:280px 1fr;max-width:1440px;margin:0 auto}
+aside.toc{position:sticky;top:0;height:100vh;overflow-y:auto;border-right:1px solid var(--line-soft);padding:28px 20px;font-size:13px}
+aside.toc .brand{display:flex;align-items:center;gap:10px;margin-bottom:22px}
+aside.toc .brand .badge{width:28px;height:28px;background:var(--accent);display:grid;place-items:center;border-radius:8px}
+aside.toc .brand .badge svg{fill:#fff}
+aside.toc .brand b{font-size:16px;letter-spacing:-0.01em}
+aside.toc .sec{font-size:10px;font-weight:700;letter-spacing:0.16em;text-transform:uppercase;color:var(--faint);margin:20px 0 8px;padding-left:10px}
+aside.toc a{display:block;color:var(--muted);padding:5px 10px;border-radius:6px;border-left:2px solid transparent;font-weight:500;line-height:1.35}
+aside.toc a:hover{background:var(--surface);color:var(--fg);text-decoration:none}
+aside.toc a.sub{padding-left:22px;font-size:12px;font-weight:400}
+main{padding:0 40px 120px;max-width:980px}
+.hero{padding:60px 0 40px;border-bottom:1px solid var(--line-soft);margin-bottom:40px}
+.hero h1{font-size:42px;letter-spacing:-0.03em;font-weight:800;line-height:1.05}
+.hero .sub{color:var(--muted);font-size:17px;margin-top:14px;max-width:640px}
+.badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+.badges span{border:1px solid var(--line-soft);background:var(--surface);padding:4px 10px;border-radius:6px;font-size:12px;font-weight:600;color:var(--muted)}
+.badges span.accent{border-color:var(--accent);color:var(--accent-strong);background:rgba(116,105,255,0.1)}
+section{margin-bottom:56px;scroll-margin-top:20px}
+section h2{font-size:28px;letter-spacing:-0.02em;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:12px}
+section h2 .num{font-size:14px;font-weight:700;color:var(--accent);background:rgba(116,105,255,0.12);padding:3px 9px;border-radius:6px}
+section h3{font-size:19px;font-weight:600;margin:28px 0 10px;letter-spacing:-0.01em}
+section h4{font-size:15px;font-weight:600;margin:20px 0 8px;color:var(--accent-strong)}
+section p{margin-bottom:14px}section p.lead{color:var(--muted);font-size:15px}
+.callout{border:1px solid var(--line-soft);border-left:3px solid var(--accent);background:rgba(116,105,255,0.06);padding:14px 18px;border-radius:8px;margin:16px 0}
+.callout.warn{border-left-color:var(--amber);background:rgba(245,185,69,0.06)}
+.callout.tip{border-left-color:var(--success);background:rgba(52,209,126,0.06)}
+.callout b{color:var(--accent-strong)}.callout.warn b{color:var(--amber)}.callout.tip b{color:var(--success)}
+pre{background:var(--sunken);border:1px solid var(--line-soft);border-radius:8px;padding:16px 18px;overflow-x:auto;margin:14px 0;font-size:13px;line-height:1.55}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+pre code{color:#cdd2db}
+:not(pre)>code{background:var(--sunken);border:1px solid var(--line-soft);padding:1px 6px;border-radius:4px;font-size:12.5px;color:var(--accent-strong)}
+.kw{color:#c792ea}.str{color:#c3e88d}.com{color:#5a6473;font-style:italic}.fn{color:#82aaff}
+.file{border:1px solid var(--line-soft);border-radius:8px;overflow:hidden;margin:14px 0}
+.file .fh{background:var(--surface);padding:10px 16px;border-bottom:1px solid var(--line-soft);display:flex;align-items:center;gap:10px}
+.file .fh .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none}
+.file .fh code{background:none;border:none;color:var(--fg);font-weight:600;font-size:13px}
+.file .fh .tag2{margin-left:auto;font-size:10px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--faint);border:1px solid var(--line-soft);padding:2px 7px;border-radius:4px}
+.file .fb{padding:14px 18px}.file .fb p{font-size:14px;color:var(--muted);margin-bottom:8px}
+.file .fb ul{margin:8px 0 8px 20px;color:var(--muted);font-size:14px}.file .fb ul li{margin-bottom:4px}
+table{border-collapse:collapse;width:100%;margin:14px 0;font-size:13.5px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+th{background:var(--surface);color:var(--accent-strong);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:0.04em}
+td code{font-size:12px}td.muted{color:var(--muted)}tr:hover td{background:rgba(255,255,255,0.02)}
+.flow{display:flex;flex-wrap:wrap;align-items:stretch;gap:0;margin:20px 0}
+.flow .step{flex:1;min-width:140px;border:1px solid var(--line-soft);background:var(--surface);padding:14px;border-radius:8px;text-align:center}
+.flow .step b{display:block;font-size:13px;margin-bottom:4px}.flow .step span{font-size:11px;color:var(--faint)}
+.flow .arr{display:flex;align-items:center;justify-content:center;width:30px;color:var(--accent);font-weight:700}
+ul.bul,ol.bul{margin:8px 0 8px 22px;color:var(--muted)}ul.bul li,ol.bul li{margin-bottom:6px}ul.bul li b,ol.bul li b{color:var(--fg)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.top-link{position:fixed;bottom:24px;right:24px;background:var(--accent);color:#fff;width:40px;height:40px;border-radius:8px;display:grid;place-items:center;font-size:18px;box-shadow:0 6px 20px rgba(0,0,0,0.4)}
+@media(max-width:960px){.wrap{grid-template-columns:1fr}aside.toc{position:relative;height:auto;border-right:none;border-bottom:1px solid var(--line-soft)}main{padding:0 20px 80px}.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<aside class="toc">
+<div class="brand"><span class="badge"><svg width="14" height="14" viewBox="0 0 24 24"><path d="M6 4.5 19 12 6 19.5z"/></svg></span><b>Johanka Docs</b></div>
+<div class="sec">Start Here</div>
+<a href="#overview">Overview</a>
+<a href="#stack">Tech Stack</a>
+<a href="#nextjs-primer">Next.js for Beginners</a>
+<div class="sec">Structure</div>
+<a href="#structure">Project Structure</a>
+<a href="#architecture">Architecture & Data Flow</a>
+<a href="#config">Configuration & Env</a>
+<div class="sec">App Router Pages</div>
+<a href="#layout">app/layout.tsx</a>
+<a href="#home">app/(home)/page.tsx</a>
+<a href="#upload-page">app/upload/page.tsx</a>
+<a href="#watch">app/watch/[id]/page.tsx</a>
+<a href="#settings-page">app/settings/page.tsx</a>
+<a href="#misc-app">not-found, loading, globals.css</a>
+<div class="sec">API Routes</div>
+<a href="#api-overview">API Overview</a>
+<a href="#api-upload" class="sub">POST /api/upload</a>
+<a href="#api-settings" class="sub">GET/POST /api/settings</a>
+<a href="#api-files" class="sub">GET /api/streamtape/files</a>
+<a href="#api-health" class="sub">GET /api/streamtape/health</a>
+<a href="#api-diagnose" class="sub">GET /api/streamtape/diagnose</a>
+<a href="#api-videos" class="sub">DELETE /api/videos/[id]</a>
+<a href="#api-direct" class="sub">GET /api/videos/[id]/direct</a>
+<a href="#api-auth" class="sub">Auth routes</a>
+<div class="sec">Library (lib/)</div>
+<a href="#lib-streamtape">streamtape.ts</a>
+<a href="#lib-ftp">ftp.ts</a>
+<a href="#lib-multipart">multipart.ts</a>
+<a href="#lib-db">db.ts</a>
+<a href="#lib-settings-lib">settings.ts & server-settings.ts</a>
+<a href="#lib-auth">auth.ts</a>
+<a href="#lib-others">format, id, types, etc.</a>
+<div class="sec">Components</div>
+<a href="#comp-nav">Nav.tsx</a>
+<a href="#comp-auth">AuthGate & AuthScreen</a>
+<a href="#comp-player">Player.tsx</a>
+<a href="#comp-cards">VideoCard / Grid / Hero</a>
+<a href="#comp-others">Thumb, WatchActions, icons</a>
+<div class="sec">Flows & Ops</div>
+<a href="#flow-upload">Upload Flow</a>
+<a href="#flow-listing">Library Listing Flow</a>
+<a href="#flow-auth">Auth & Admin Flow</a>
+<a href="#deploy">Deployment</a>
+<a href="#glossary">Glossary</a>
+</aside>
+<main>
+<div class="hero" id="top">
+<h1>Johanka — Project Documentation</h1>
+<p class="sub">A minimal, self-hosted video streaming service built with Next.js. This guide walks a complete beginner through every file, concept, and data flow in the project — written for someone who is new to Next.js.</p>
+<div class="badges">
+<span class="accent">Next.js 15.5</span><span>React 19</span><span>TypeScript 5.8</span><span>Tailwind CSS 4</span><span>Node.js 20+</span><span>Docker</span><span>PostgreSQL</span><span>Firebase</span><span>StreamTape</span>
+</div>
+</div>
+
+<section id="overview">
+<h2><span class="num">01</span> What is Johanka?</h2>
+<p class="lead">Johanka is a personal, self-hosted "Netflix-style" video streaming app. The clever part: it does <b>not</b> store any video files on its own server. Instead it uses <b>StreamTape</b> (a free file-hosting service) as the actual storage and streaming backend, and Johanka just acts as the clean front-end that lists, uploads, and plays those videos.</p>
+<p>Think of it like a pretty remote control for your StreamTape account. When you open the home page, Johanka asks StreamTape "what videos do I have?", shows them in a nice grid, and when you click one, it embeds StreamTape's built-in video player.</p>
+<h3>The big picture (one sentence)</h3>
+<p><code>browser &rarr; Next.js server &rarr; StreamTape</code> (FTP for uploads, REST API for listing, iframe for playback).</p>
+<h3>What it does (features)</h3>
+<ul class="bul">
+<li><b>Live library</b> — every file in your StreamTape account appears automatically. You can also limit it to one folder.</li>
+<li><b>Upload</b> — drag &amp; drop a video (mp4, webm, mkv, mov…). It streams through Johanka's server and lands in your StreamTape account over FTP.</li>
+<li><b>Auto thumbnails</b> — StreamTape generates a poster image after it processes each video. No ffmpeg needed.</li>
+<li><b>Streaming</b> — playback uses StreamTape's embeddable iframe player (free, no transcoding).</li>
+<li><b>Search &amp; Continue Watching</b> — search by title (URL-based) and a "continue watching" row driven by localStorage.</li>
+<li><b>Optional Google sign-in</b> — via Firebase; guests can browse without an account.</li>
+<li><b>Locked /settings page</b> — an operator dashboard protected by an admin key, where you configure StreamTape credentials and an optional PostgreSQL database.</li>
+</ul>
+<div class="callout tip"><b>Why StreamTape?</b> Free storage + streaming + auto-generated thumbnails. Johanka intentionally keeps <i>no media files on disk</i> — the server only ever proxies bytes through during an upload, then deletes the temp file. This makes it cheap to host (even on a 512MB free tier).</div>
+</section>
+<section id="stack">
+<h2><span class="num">02</span> Tech Stack</h2>
+<p class="lead">Here's every piece of technology in the project and the role each one plays. If you're new to any of these, don't worry — the rest of this doc explains them as we go.</p>
+<table>
+<thead><tr><th>Tool</th><th>Version</th><th>What it's used for</th></tr></thead>
+<tbody>
+<tr><td><code>next</code></td><td>15.5</td><td>The web framework — handles routing, server rendering, API routes, and the build.</td></tr>
+<tr><td><code>react</code> / <code>react-dom</code></td><td>19</td><td>The UI library that renders components in the browser.</td></tr>
+<tr><td><code>typescript</code></td><td>5.8</td><td>Adds types to JavaScript so errors are caught at edit/build time.</td></tr>
+<tr><td><code>tailwindcss</code> + <code>@tailwindcss/postcss</code></td><td>4</td><td>A utility-first CSS framework. You style by combining small classes like <code>bg-surface</code>, <code>text-muted</code>, <code>mt-4</code>.</td></tr>
+<tr><td><code>pg</code></td><td>8</td><td>The official PostgreSQL driver. Used (optionally) to persist settings + signed-in users.</td></tr>
+<tr><td><code>firebase</code> + <code>firebase-admin</code></td><td>12 / 14</td><td>Google sign-in. The browser SDK does the popup; the admin SDK verifies the token server-side.</td></tr>
+<tr><td><code>basic-ftp</code></td><td>6</td><td>An FTP client used to upload video files to StreamTape (their HTTP upload caps at ~1MB).</td></tr>
+<tr><td><code>undici</code></td><td>7</td><td>Node's fetch engine; used for optional HTTPS proxy support.</td></tr>
+<tr><td>Docker</td><td>—</td><td>Packages the app into a tiny standalone image for deployment.</td></tr>
+</tbody>
+</table>
+<p>The only "external service" you must have is a free StreamTape account. PostgreSQL and Firebase are <b>optional</b> — the app degrades gracefully without them.</p>
+</section>
+<section id="nextjs-primer">
+<h2><span class="num">03</span> Next.js for Beginners</h2>
+<p class="lead">Since you're new to Next.js, here's a quick crash course on the concepts this project actually uses. This will make every other section make sense.</p>
+
+<h3>3.1 The App Router</h3>
+<p>Next.js has two ways of routing. This project uses the newer <b>App Router</b>, which lives in the <code>app/</code> folder. The rule is beautifully simple: <b>folders become URL paths</b>.</p>
+<ul class="bul">
+<li><code>app/page.tsx</code> &rarr; <code>/</code> (home page)</li>
+<li><code>app/upload/page.tsx</code> &rarr; <code>/upload</code></li>
+<li><code>app/settings/page.tsx</code> &rarr; <code>/settings</code></li>
+<li><code>app/watch/[id]/page.tsx</code> &rarr; <code>/watch/ANYTHING</code> (a <b>dynamic route</b>; the <code>[id]</code> part is a variable)</li>
+</ul>
+
+<h3>3.2 Special files inside a folder</h3>
+<p>Inside each route folder, Next.js looks for specially-named files:</p>
+<table>
+<thead><tr><th>File</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><code>page.tsx</code></td><td>The page itself — what the user sees at that URL.</td></tr>
+<tr><td><code>loading.tsx</code></td><td>Shown automatically while the page is loading (a "skeleton").</td></tr>
+<tr><td><code>not-found.tsx</code></td><td>The 404 page for the whole app.</td></tr>
+<tr><td><code>route.ts</code></td><td>Inside <code>app/api/...</code> folders, this file IS an HTTP endpoint instead of a page.</td></tr>
+<tr><td><code>layout.tsx</code></td><td>A wrapper shared by all pages. The root layout holds the &lt;html&gt; and &lt;body&gt;.</td></tr>
+<tr><td><code>icon.svg</code></td><td>The favicon.</td></tr>
+</tbody>
+</table>
+
+<h3>3.3 Route groups — the weird <code>(home)</code> folder</h3>
+<p>You'll see <code>app/(home)/page.tsx</code>. The parentheses make it a <b>route group</b>. A folder in parentheses is <i>invisible</i> to the URL — <code>(home)</code> doesn't appear in the path. It exists purely for <b>organisation</b>: you can give a group its own <code>loading.tsx</code> or layout without affecting the URL. So <code>(home)/page.tsx</code> is still served at <code>/</code>.</p>
+
+<h3>3.4 "use client" — the most important line</h3>
+<p>At the top of many files you'll see <code>"use client";</code>. This is Next.js's way of splitting the app into two worlds:</p>
+<ul class="bul">
+<li><b>Server Components</b> (default): render on the server, ship HTML to the browser. They <i>cannot</i> use hooks like <code>useState</code> or <code>useEffect</code>, and can't listen to clicks.</li>
+<li><b>Client Components</b> (files starting with <code>"use client"</code>): render in the browser. They CAN use state, effects, event handlers, browser APIs like <code>localStorage</code>.</li>
+</ul>
+<p>Files that need interactivity (search box, upload form, the video grid that fetches data on load) therefore start with <code>"use client"</code>. Files that are pure/static (like <code>layout.tsx</code> exporting metadata) stay as server components.</p>
+<div class="callout"><b>Pattern in this project:</b> most pages are client components because they fetch the library from the API in a <code>useEffect</code> and update state. The root <code>layout.tsx</code> is a server component (it just sets up fonts, metadata, and the shell).</div>
+
+<h3>3.5 API Routes (Route Handlers)</h3>
+<p>Inside <code>app/api/</code>, each <code>route.ts</code> file exports functions named after HTTP verbs:</p>
+<pre><code><span class="kw">export async function</span> <span class="fn">GET</span>(req) { ... }   <span class="com">// runs when someone sends GET to this URL</span>
+<span class="kw">export async function</span> <span class="fn">POST</span>(req) { ... }  <span class="com">// runs on POST</span>
+<span class="kw">export async function</span> <span class="fn">DELETE</span>(req, { params }) { ... }</code></pre>
+<p>So <code>app/api/upload/route.ts</code> exporting <code>POST</code> means "a POST request to <code>/api/upload</code> runs this code". You return a <code>NextResponse.json(...)</code> and Next turns it into an HTTP response.</p>
+
+<h3>3.6 Two config flags you'll see in routes</h3>
+<table>
+<thead><tr><th>Line</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><code>export const runtime = "nodejs";</code></td><td>Run this route in the full Node.js runtime (not the limited "edge" runtime). Needed for things like <code>fs</code>, FTP, native modules.</td></tr>
+<tr><td><code>export const dynamic = "force-dynamic";</code></td><td>Never cache this response — re-run it every request. Used for endpoints that read live data or env vars at runtime.</td></tr>
+</tbody>
+</table>
+
+<h3>3.7 Path alias <code>@/</code></h3>
+<p>In <code>tsconfig.json</code> there's <code>"paths": { "@/*": ["./*"] }</code>. This means <code>@/lib/types</code> is short for the file at <code>./lib/types.ts</code> (relative to the project root). You'll see imports like <code>import { Video } from "@/lib/types"</code> everywhere — it's just a cleaner way to write relative paths.</p>
+
+<div class="callout tip"><b>You now know enough Next.js to read this whole project!</b> The rest is just regular React + TypeScript + Tailwind, plus some Node.js server code for talking to StreamTape/PostgreSQL.</div>
+</section>
+<section id="structure">
+<h2><span class="num">04</span> Project Structure</h2>
+<p class="lead">Here's the whole file tree (with node_modules, .next, and .git excluded). Read it top-to-bottom: the top is config, then the app (pages + APIs), then reusable code in lib/ and components/.</p>
+<pre><code>johanka/
+├── <b>app/</b>                      <span class="com"># the App Router — every folder = a URL</span>
+│   ├── <b>layout.tsx</b>            <span class="com"># root layout (html, body, fonts, nav shell)</span>
+│   ├── <b>globals.css</b>           <span class="com"># Tailwind import + design tokens + base styles</span>
+│   ├── <b>not-found.tsx</b>         <span class="com"># the 404 page</span>
+│   ├── <b>icon.svg</b>              <span class="com"># favicon</span>
+│   ├── <b>(home)/</b>               <span class="com"># route group (invisible in URL)</span>
+│   │   ├── <b>page.tsx</b>          <span class="com"># the home/library page  →  /</span>
+│   │   └── <b>loading.tsx</b>      <span class="com"># skeleton shown while loading</span>
+│   ├── <b>upload/page.tsx</b>       <span class="com"># upload page  →  /upload</span>
+│   ├── <b>settings/page.tsx</b>    <span class="com"># operator dashboard  →  /settings</span>
+│   ├── <b>watch/[id]/page.tsx</b>   <span class="com"># video player  →  /watch/FILEID</span>
+│   └── <b>api/</b>                  <span class="com"># backend endpoints (route handlers)</span>
+│       ├── <b>upload/route.ts</b>          <span class="com"># POST — upload video to StreamTape</span>
+│       ├── <b>settings/route.ts</b>        <span class="com"># GET/POST — operator config (locked)</span>
+│       ├── <b>streamtape/files/route.ts</b>   <span class="com"># GET — list library from StreamTape</span>
+│       ├── <b>streamtape/health/route.ts</b>  <span class="com"># GET — validate creds (admin)</span>
+│       ├── <b>streamtape/diagnose/route.ts</b><span class="com"># GET — connectivity diagnostics</span>
+│       ├── <b>videos/[id]/route.ts</b>      <span class="com"># DELETE — remove video (admin)</span>
+│       ├── <b>videos/[id]/direct/route.ts</b><span class="com"># GET — temp direct mp4 link (admin)</span>
+│       └── <b>auth/</b>            <span class="com"># sign-in/session/guest/logout/me/config</span>
+├── <b>components/</b>              <span class="com"># reusable React UI pieces</span>
+│   ├── Nav.tsx, AuthGate.tsx, AuthScreen.tsx
+│   ├── Player.tsx, VideoCard.tsx, VideoGrid.tsx, HeroVideo.tsx
+│   ├── ContinueWatching.tsx, WatchActions.tsx
+│   ├── Thumb.tsx, GradientThumb.tsx, icons.tsx
+├── <b>lib/</b>                     <span class="com"># shared logic (used by app + components)</span>
+│   ├── streamtape.ts, ftp.ts, multipart.ts, db.ts
+│   ├── settings.ts, server-settings.ts, admin-auth.ts
+│   ├── auth.ts, use-auth.tsx, firebase-client.ts
+│   ├── remote.ts, localstore.ts, types.ts, format.ts, id.ts
+├── <b>scripts/standalone-copy.mjs</b>   <span class="com"># postbuild helper for Docker</span>
+├── <b>public/</b>                  <span class="com"># static files served as-is</span>
+├── <b>data/</b>                    <span class="com"># runtime data dir (git-ignored)</span>
+├── package.json              <span class="com"># dependencies + npm scripts</span>
+├── next.config.ts            <span class="com"># standalone output + version stamp</span>
+├── tsconfig.json             <span class="com"># TS config + the @/ path alias</span>
+├── postcss.config.mjs        <span class="com"># enables Tailwind v4 via PostCSS</span>
+├── .eslintrc.json            <span class="com"># lint rules (next core-web-vitals)</span>
+├── .env.example              <span class="com"># template for all env vars</span>
+├── Dockerfile                <span class="com"># multi-stage Docker build</span>
+├── docker-compose.yml        <span class="com"># one-command deploy</span>
+└── README.md</code></pre>
+</section>
+<section id="architecture">
+<h2><span class="num">05</span> Architecture &amp; Data Flow</h2>
+<p class="lead">Johanka is a thin Next.js app sitting between the browser and StreamTape. The server never stores video files; it only (a) lists what's in your StreamTape account, (b) forwards uploads to StreamTape over FTP, and (c) embeds StreamTape's player. Settings/users optionally live in PostgreSQL.</p>
+
+<h3>5.1 The three-tier flow</h3>
+<div class="flow">
+<div class="step"><b>Browser</b><span>React client components<br>UI, search, upload form</span></div>
+<div class="arr">&rarr;</div>
+<div class="step"><b>Next.js server</b><span>API routes in app/api<br>resolves creds from env+DB</span></div>
+<div class="arr">&rarr;</div>
+<div class="step"><b>StreamTape</b><span>free storage + player<br>REST API + FTP</span></div>
+</div>
+<p>The browser never knows your StreamTape credentials. Every API route resolves them server-side (env vars win over the DB). This keeps secrets off the client and makes the library identical for every visitor.</p>
+
+<h3>5.2 Where state lives</h3>
+<table>
+<thead><tr><th>What</th><th>Where</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>Video library (the list of videos)</td><td><b>StreamTape itself</b> (read live via <code>/api/streamtape/files</code>)</td><td>No DB needed; mirrors the account exactly. localStorage is a fallback only.</td></tr>
+<tr><td>Watch history ("continue watching")</td><td>Browser <code>localStorage</code> (<code>johanka:history</code>)</td><td>Per-device, no account required.</td></tr>
+<tr><td>Operator settings (StreamTape creds, folder id, DSN)</td><td><b>PostgreSQL</b> <code>settings</code> table (optional)</td><td>Survives across browsers/incognito. Env vars always override.</td></tr>
+<tr><td>Admin key</td><td>SHA-256 hash in PostgreSQL OR <code>JOHANKA_ADMIN_KEY</code> env var</td><td>Never stored in plaintext; env var always wins.</td></tr>
+<tr><td>Signed-in users (Google)</td><td><b>PostgreSQL</b> <code>users</code> table (optional)</td><td>Best-effort; a healthy session works even if the DB is down.</td></tr>
+<tr><td>Session</td><td>HTTP-only cookie <code>johanka_session</code> (Firebase-verified)</td><td>Secure, survives reloads, 14-day expiry.</td></tr>
+<tr><td>Guest identity</td><td>HTTP-only cookie <code>johanka_guest</code> + localStorage flag</td><td>No DB row; 30-day cookie.</td></tr>
+<tr><td>Admin key (this tab only)</td><td>In-memory JS variable (<code>lib/admin-auth.ts</code>)</td><td>Deliberately not persisted — reload re-prompts for safety.</td></tr>
+</tbody>
+</table>
+
+<h3>5.3 Caching strategy</h3>
+<p>To avoid hammering the StreamTape API on every page load, <code>/api/streamtape/files</code> keeps two in-memory caches:</p>
+<ul class="bul">
+<li><b>Listing cache</b> — the full library is cached for <b>30 seconds</b> per credentials+folder key.</li>
+<li><b>Splash cache</b> — thumbnail URLs (from <code>/file/getsplash</code>) are cached for <b>10 minutes</b> on success or <b>2 minutes</b> on failure (so a still-processing video re-checks sooner).</li>
+</ul>
+<div class="callout"><b>Note:</b> these caches are in-process (module-level <code>Map</code>s), so they reset on every server restart. That's fine — they're just a debounce, not a source of truth.</div>
+</section>
+
+<section id="config">
+<h2><span class="num">06</span> Configuration &amp; Environment</h2>
+<p class="lead">Everything is configurable via environment variables OR the /settings UI. Env vars always win over saved settings (good for locking things down in production).</p>
+
+<h3>6.1 The env variables (<code>.env.example</code>)</h3>
+<table>
+<thead><tr><th>Env var</th><th>Required?</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td><code>STREAMTAPE_LOGIN</code></td><td><b>Yes</b></td><td>Your StreamTape "API/FTP username". Sent as the API <code>login</code> param + FTP user.</td></tr>
+<tr><td><code>STREAMTAPE_KEY</code></td><td><b>Yes</b></td><td>Your StreamTape "API/FTP password". Sent as the API <code>key</code> param + FTP password.</td></tr>
+<tr><td><code>STREAMTAPE_FOLDER_ID</code></td><td>Optional</td><td>Scope the library to one StreamTape folder (uploads land there too). Blank = whole account. Find it in the folder's URL: <code>streamtape.com/f/&lt;folder-id&gt;/...</code></td></tr>
+<tr><td><code>JOHANKA_ADMIN_KEY</code></td><td>Optional</td><td>Long random passphrase that unlocks <code>/settings</code>. Always wins over a DB-stored key. Recommended: <code>openssl rand -hex 32</code>.</td></tr>
+<tr><td><code>DATABASE_URL</code></td><td>Optional</td><td>PostgreSQL connection string. Persists /settings + stores Google users. Tables auto-create on first use.</td></tr>
+<tr><td><code>NEXT_PUBLIC_FIREBASE_API_KEY</code></td><td>Optional</td><td>Client Firebase config (shipped to browser). Enables the Google button.</td></tr>
+<tr><td><code>NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN</code></td><td>Optional</td><td>e.g. <code>&lt;project&gt;.firebaseapp.com</code></td></tr>
+<tr><td><code>NEXT_PUBLIC_FIREBASE_PROJECT_ID</code></td><td>Optional</td><td>Firebase project id.</td></tr>
+<tr><td><code>FIREBASE_PROJECT_ID</code> / <code>FIREBASE_CLIENT_EMAIL</code> / <code>FIREBASE_PRIVATE_KEY</code></td><td>Optional</td><td>Server-side service account — verifies tokens &amp; mints session cookies. The private key keeps its literal <code>\n</code> escapes.</td></tr>
+<tr><td><code>HTTPS_PROXY</code></td><td>Optional</td><td>Outbound proxy for StreamTape API calls (for restricted networks).</td></tr>
+<tr><td><code>NEXT_PUBLIC_APP_VERSION</code></td><td>Auto</td><td>App version shown in the footer. Auto-resolved from git tag → commit → package.json.</td></tr>
+</tbody>
+</table>
+
+<h3>6.2 The npm scripts (<code>package.json</code>)</h3>
+<table>
+<thead><tr><th>Command</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td><code>npm run dev</code></td><td>Start the dev server on http://localhost:3000 with hot reload.</td></tr>
+<tr><td><code>npm run build</code></td><td>Create a production build in <code>.next/</code>.</td></tr>
+<tr><td><code>npm run postbuild</code></td><td>Runs <code>scripts/standalone-copy.mjs</code> — copies static+public into <code>.next/standalone</code> so the server is self-contained.</td></tr>
+<tr><td><code>npm start</code></td><td>Run the built standalone server: <code>node .next/standalone/server.js</code>.</td></tr>
+<tr><td><code>npm run lint</code></td><td>Run ESLint (<code>next lint</code>).</td></tr>
+</tbody>
+</table>
+
+<h3>6.3 <code>next.config.ts</code> — the two important bits</h3>
+<ul class="bul">
+<li><b><code>output: "standalone"</code></b> — tells Next to produce a self-contained server in <code>.next/standalone</code> so the Docker image doesn't need the whole <code>node_modules</code>.</li>
+<li><b><code>serverExternalPackages</code></b> — keeps <code>basic-ftp</code>, <code>undici</code>, and <code>firebase-admin</code> external (not bundled), because they open raw sockets / resolve credentials at runtime.</li>
+<li><b>Version stamping</b> — <code>currentVersion()</code> resolves the app version for the footer from: env var &rarr; <code>git describe --tags</code> &rarr; <code>package.json</code> version. This is baked into <code>NEXT_PUBLIC_APP_VERSION</code> at build time.</li>
+</ul>
+</section>
+<section id="layout">
+<h2><span class="num">07</span> app/layout.tsx — The Root Layout</h2>
+<p class="lead">This is the outermost wrapper for every page. It's a <b>server component</b> (no "use client") because it only sets up fonts, metadata, and the static shell.</p>
+<div class="file"><div class="fh"><span class="dot"></span><code>app/layout.tsx</code><span class="tag2">Server Component</span></div>
+<div class="fb">
+<p>What it does, line by line:</p>
+<ul>
+<li><b>Fonts</b> — loads Google Fonts via <code>next/font/google</code>: <code>Inter</code> (the sans body font, exposed as <code>--font-sans</code>) and <code>Aref_Ruqaa_Ink</code> (an Arabic calligraphy font used for the footer signature, exposed as <code>--font-aref-ruqaa</code>). <code>next/font</code> self-hosts fonts so there's no external request.</li>
+<li><b>Metadata</b> — exports a <code>Metadata</code> object: default title "Johanka — minimal self-hosted video streaming", a title template (<code>%s · Johanka</code>), description, OpenGraph tags, and the favicon. Individual pages can override the title.</li>
+<li><b>Viewport</b> — exports a <code>Viewport</code> object setting <code>themeColor</code> and <code>colorScheme: dark</code>.</li>
+<li><b>The shell</b> — the returned JSX wraps everything in <code>&lt;AuthProvider&gt;</code> (the auth context), renders <code>&lt;TopBar /&gt;</code>, a <code>&lt;Sidebar /&gt;</code>, then <code>&lt;AuthGate&gt;{children}&lt;/AuthGate&gt;</code> (which blocks the app until you sign in / continue as guest), and a <code>&lt;FooterBar /&gt;</code>.</li>
+<li><b>FooterBar</b> — a sticky footer showing "Johanka v&lt;version&gt;" on the left and the maker's name in Aref Ruqaa Ink (RTL) on the right.</li>
+</ul>
+<div class="callout"><b>Why <code>&lt;AuthProvider&gt;</code> here?</b> Putting it in the root layout means the auth state is available to every page and the <code>&lt;AuthGate&gt;</code> can read it. The provider is a client component itself, but it can wrap server-rendered children just fine.</div>
+</div></div>
+</section>
+
+<section id="home">
+<h2><span class="num">08</span> app/(home)/page.tsx — The Library (Home Page)</h2>
+<p class="lead">This is the main page at <code>/</code>. It's a <b>client component</b> because it fetches the video list and updates state.</p>
+<div class="file"><div class="fh"><span class="dot"></span><code>app/(home)/page.tsx</code><span class="tag2">Client Component</span></div>
+<div class="fb">
+<p>Key logic inside <code>HomeContent()</code>:</p>
+<ul>
+<li><b>Search via URL</b> — reads <code>?q=</code> from the URL with <code>useSearchParams()</code>. The search box (in <code>Nav.tsx</code>) writes to this param, so search is "shareable" and survives reloads. Wrapped in <code>&lt;Suspense&gt;</code> because <code>useSearchParams</code> requires it.</li>
+<li><b>Load the library</b> — in a <code>useEffect</code>, calls <code>fetchRemoteVideos()</code> (which hits <code>/api/streamtape/files</code>). If that returns results, use them; otherwise fall back to <code>getStoredVideos()</code> (localStorage). Sets <code>loading=false</code> when done.</li>
+<li><b>Filtering</b> — if there's a <code>?q=</code> query, filter videos by title (case-insensitive). The hero is hidden while searching so results read as search results.</li>
+<li><b>Featured hero</b> — the newest video (by <code>created_at</code>) becomes the big <code>&lt;HeroVideo&gt;</code> banner at the top.</li>
+<li><b>Continue watching</b> — renders <code>&lt;ContinueWatching&gt;</code> (only when not searching) above the grid.</li>
+<li><b>The grid</b> — <code>&lt;VideoGrid videos={filtered} /&gt;</code> shows the matching videos as cards.</li>
+<li><b>Empty state</b> — a friendly "Your library is empty" card with an upload button when there are no videos, or "No videos match" when searching finds nothing.</li>
+<li><b>Loading skeleton</b> — <code>HomeLoading()</code> shows shimmer placeholders for the hero + 8 cards while loading.</li>
+</ul>
+</div></div>
+<div class="file"><div class="fh"><span class="dot"></span><code>app/(home)/loading.tsx</code><span class="tag2">Auto Skeleton</span></div>
+<div class="fb"><p>A skeleton screen (shimmer blocks) that Next shows <i>automatically</i> while the route segment is loading. Same visual idea as <code>HomeLoading</code> but triggered by the framework's loading state, not by component state.</p></div></div>
+</section>
+<section id="upload-page">
+<h2><span class="num">09</span> app/upload/page.tsx — The Upload Page</h2>
+<p class="lead">A drag-and-drop video uploader at <code>/upload</code>. Client component.</p>
+<div class="file"><div class="fh"><span class="dot"></span><code>app/upload/page.tsx</code><span class="tag2">Client Component</span></div>
+<div class="fb">
+<p>How an upload works in the browser:</p>
+<ul>
+<li><b>Pick a file</b> — click the dashed dropzone or drag a file onto it. <code>pick()</code> validates it's a video (<code>video/*</code> or .mp4/.webm/.mkv/.mov/.avi/.m4v) and pre-fills the title from the filename.</li>
+<li><b>Form fields</b> — Title + Description (optional). No credentials are sent — the server resolves them itself.</li>
+<li><b>Submit via XMLHttpRequest</b> — uses <code>XMLHttpRequest</code> instead of <code>fetch()</code> for one reason: <code>fetch</code> can't track upload progress, but <code>xhr.upload.onprogress</code> can. The progress bar scales to 0–90% (the last 10% is the server-side FTP step which the browser can't see).</li>
+<li><b>Stages</b> — <code>idle → uploading → storing → (error)</code>. "uploading" = browser→server; "storing" = server→StreamTape FTP (already done by the time the response arrives).</li>
+<li><b>On success</b> — saves the returned video to localStorage (<code>upsertStoredVideo</code>) and redirects to <code>/watch/&lt;streamtape_id&gt;</code>.</li>
+</ul>
+<div class="callout tip"><b>Why not fetch?</b> <code>fetch()</code> has no upload-progress event. <code>XMLHttpRequest.upload.onprogress</code> gives real <code>loaded/total</code> bytes so we can draw a progress bar.</div>
+</div></div>
+</section>
+
+<section id="watch">
+<h2><span class="num">10</span> app/watch/[id]/page.tsx — The Watch Page</h2>
+<p class="lead">The video player page at <code>/watch/&lt;id&gt;</code>. The <code>[id]</code> is the StreamTape file id. Client component.</p>
+<div class="file"><div class="fh"><span class="dot"></span><code>app/watch/[id]/page.tsx</code><span class="tag2">Dynamic Route</span></div>
+<div class="fb">
+<ul>
+<li><b>Get the id</b> — <code>useParams()</code> reads the <code>id</code> from the URL.</li>
+<li><b>Resolve the video</b> — fetches the remote library, falls back to localStorage, then finds the matching video by id. Also sets <code>document.title</code> to "&lt;title&gt; · Johanka" and resets it on unmount.</li>
+<li><b>Loading state</b> — a spinner while resolving.</li>
+<li><b>404 state</b> — if the video isn't found, a "404 — this page doesn't exist" card.</li>
+<li><b>Layout</b> — a two-column grid: the <code>&lt;Player&gt;</code> + title + description + metadata (duration, size, upload time) + <code>&lt;WatchActions&gt;</code> on the left; a sidebar of up to 4 related videos (<code>&lt;VideoCard&gt;</code>) on the right (hidden on mobile, where they move below).</li>
+</ul>
+</div></div>
+</section>
+
+<section id="settings-page">
+<h2><span class="num">11</span> app/settings/page.tsx — The Operator Dashboard</h2>
+<p class="lead">A locked config page at <code>/settings</code> where you set StreamTape credentials, the folder id, a PostgreSQL DSN, and rotate the admin key. Client component.</p>
+<div class="file"><div class="fh"><span class="dot"></span><code>app/settings/page.tsx</code><span class="tag2">Client Component · Locked</span></div>
+<div class="fb">
+<p>The page runs through a <code>phase</code> state machine: <code>loading → (setup | lock | unlocked)</code>.</p>
+<ul>
+<li><b>loading</b> — calls <code>GET /api/settings</code> to discover the current state.</li>
+<li><b>setup</b> — no admin key exists yet. Shows a "create the key" form (two fields, must match, min 16 chars). POSTs <code>{admin_key}</code>.</li>
+<li><b>lock</b> — a key exists but you haven't entered it. Shows an unlock prompt. On submit, stores the key in-memory (<code>setAdminKey</code>) and reloads.</li>
+<li><b>unlocked</b> — shows the full dashboard: StreamTape login/password (password is masked — "set" indicator only), folder id, PostgreSQL DSN, an optional new admin key, a "Save" button, a live "Health" pill (calls <code>/api/streamtape/health</code>), and a "Run diagnostics" button (calls <code>/api/streamtape/diagnose</code>).</li>
+</ul>
+<div class="callout"><b>Security model:</b> the admin key is held only in memory for the current tab (<code>lib/admin-auth.ts</code>) and sent as <code>Authorization: Bearer &lt;key&gt;</code> on every admin request. Reloading /settings re-prompts. The key is verified server-side against a SHA-256 hash (DB) or the env var.</div>
+</div></div>
+</section>
+<section id="misc-app">
+<h2><span class="num">12</span> not-found, icon.svg &amp; globals.css</h2>
+<div class="file"><div class="fh"><span class="dot"></span><code>app/not-found.tsx</code><span class="tag2">404 Page</span></div><div class="fb"><p>A simple centered 404 with a big "404", "Page not found" text, and a "Back to home" link. Next shows this automatically when a route doesn't match.</p></div></div>
+<div class="file"><div class="fh"><span class="dot"></span><code>app/icon.svg</code><span class="tag2">Favicon</span></div><div class="fb"><p>A 64×64 SVG: a violet rounded square (#7469ff) with a white play triangle. Next auto-detects this file and serves it as the favicon.</p></div></div>
+<div class="file"><div class="fh"><span class="dot"></span><code>app/globals.css</code><span class="tag2">Design System</span></div><div class="fb"><p>The single source of styling truth. It does four things:</p>
+<ul>
+<li><b>Imports Tailwind</b> — <code>@import "tailwindcss";</code> (Tailwind v4 style).</li>
+<li><b>Design tokens</b> — a <code>@theme { ... }</code> block defines all the colors as CSS variables that become Tailwind utilities. So <code>--color-accent: #7469ff</code> becomes the class <code>bg-accent</code>, <code>text-accent</code>, etc. The palette: <code>base</code> (page bg), <code>surface</code> (cards), <code>raised</code> (hovered), <code>sunken</code> (inputs), <code>fg</code>/<code>muted</code>/<code>faint</code> (text tiers), <code>accent</code> (violet), <code>success</code>/<code>danger</code>. Notably <code>--radius: 0px</code> — the app has <b>no rounded corners anywhere</b> (a deliberate flat aesthetic).</li>
+<li><b>Base element styles</b> — dark color-scheme, a subtle grid texture background, thin custom scrollbars, accent focus rings, text selection tint, pointer cursors on buttons, and reduced-motion support.</li>
+<li><b>Utility classes</b> — <code>.shimmer</code> (loading skeleton animation), <code>.bg-noise-grid</code>, <code>.no-scrollbar</code>, <code>.app-main</code> (fade-in animation).</li>
+</ul>
+<div class="callout tip"><b>Want to re-skin the app?</b> Just change the color values in the <code>@theme</code> block in <code>globals.css</code>. Every component reads them as Tailwind classes, so the whole UI updates at once.</div>
+</div></div>
+</section>
+
+<section id="api-overview">
+<h2><span class="num">13</span> API Routes — Overview</h2>
+<p class="lead">All backend endpoints live under <code>app/api/</code>. Each <code>route.ts</code> exports functions named after HTTP verbs. Here's the full map:</p>
+<table>
+<thead><tr><th>Endpoint</th><th>Method</th><th>Who can call it</th><th>Purpose</th></tr></thead>
+<tbody>
+<tr><td><code>/api/streamtape/files</code></td><td>GET</td><td>Public</td><td>List the library from StreamTape (cached 30s)</td></tr>
+<tr><td><code>/api/upload</code></td><td>POST</td><td>Public</td><td>Stream a video to StreamTape via FTP</td></tr>
+<tr><td><code>/api/settings</code></td><td>GET/POST</td><td>Admin key</td><td>Read/save operator config + manage the key</td></tr>
+<tr><td><code>/api/streamtape/health</code></td><td>GET</td><td>Admin key</td><td>Validate credentials against <code>/account/info</code></td></tr>
+<tr><td><code>/api/streamtape/diagnose</code></td><td>GET</td><td>Admin key</td><td>DNS + API connectivity report</td></tr>
+<tr><td><code>/api/videos/[id]</code></td><td>DELETE</td><td>Admin key</td><td>Delete a file from StreamTape</td></tr>
+<tr><td><code>/api/videos/[id]/direct</code></td><td>GET</td><td>Admin key</td><td>Resolve a temporary direct mp4 link</td></tr>
+<tr><td><code>/api/auth/config</code></td><td>GET</td><td>Public</td><td>Expose client Firebase config (runtime)</td></tr>
+<tr><td><code>/api/auth/session</code></td><td>POST</td><td>Public</td><td>Verify Google ID token, set session cookie</td></tr>
+<tr><td><code>/api/auth/me</code></td><td>GET</td><td>Public</td><td>Return current user / guest / null</td></tr>
+<tr><td><code>/api/auth/guest</code></td><td>POST</td><td>Public</td><td>Set a guest cookie (no account)</td></tr>
+<tr><td><code>/api/auth/logout</code></td><td>POST</td><td>Public</td><td>Clear session + guest cookies</td></tr>
+</tbody>
+</table>
+<div class="callout"><b>Recurring pattern:</b> every route that talks to StreamTape starts by calling <code>loadEffectiveSettings()</code> to get the credentials server-side (env wins over DB). The browser never sends secrets. Admin-only routes additionally call <code>isAdminRequest(req)</code> to check the Bearer key.</div>
+</section>
+<section id="api-upload">
+<h2><span class="num">14</span> POST /api/upload — The Upload Endpoint</h2>
+<p class="lead">This is the most complex route. It receives a multipart video upload and forwards it to StreamTape over FTP — <b>without ever loading the whole file into memory</b>.</p>
+<div class="file"><div class="fh"><span class="dot"></span><code>app/api/upload/route.ts</code><span class="tag2">Route Handler</span></div><div class="fb">
+<p>The full pipeline:</p>
+<ol class="bul">
+<li><b>Create a temp dir</b> — <code>os.tmpdir()/johanka-&lt;id&gt;</code>.</li>
+<li><b>Parse the multipart body as a stream</b> — instead of <code>await req.formData()</code> (which buffers everything in RAM and OOMs on big files), it uses a custom <code>parseMultipartStream()</code> that streams the <code>file</code> part straight to a temp file on disk. Small text fields (title/description) stay in memory.</li>
+<li><b>Resolve credentials server-side</b> — <code>loadEffectiveSettings()</code> (env wins over DB). Returns 400 if StreamTape isn't configured.</li>
+<li><b>Sanitize the title</b> — <code>clampUsername()</code> strips odd characters and caps at 60 chars; falls back to the filename without extension.</li>
+<li><b>FTP upload</b> — <code>uploadViaFtp(creds, tempPath, safeName, folderId)</code> streams the temp file to <code>ftp.streamtape.com</code>. Returns a StreamTape file id.</li>
+<li><b>Build the embed URL</b> — <code>embedUrl(fileid)</code> → <code>https://streamtape.com/e/&lt;fileid&gt;</code>.</li>
+<li><b>Get the thumbnail</b> — <code>getThumbnailUrl(creds, fileid)</code> hits <code>/file/getsplash</code>. May be null while StreamTape is still processing — the library re-resolves it later.</li>
+<li><b>Return the video object</b> — as JSON with status 201. The client saves it to localStorage and redirects to <code>/watch/&lt;streamtape_id&gt;</code>.</li>
+<li><b>Cleanup</b> — the <code>finally</code> block deletes the temp files no matter what.</li>
+</ol>
+<div class="callout warn"><b>Memory safety:</b> the whole point of the custom multipart parser is that a 2GB video never holds more than a few KB of server RAM. The bytes go: browser → disk temp file → FTP. Without this, the old <code>req.formData()</code> approach OOM-killed the process at ~150MB on Render's free tier.</div>
+</div></div>
+</section>
+
+<section id="api-settings">
+<h2><span class="num">15</span> GET/POST /api/settings — The Config Endpoint</h2>
+<div class="file"><div class="fh"><span class="dot"></span><code>app/api/settings/route.ts</code><span class="tag2">Route Handler · Locked</span></div><div class="fb">
+<p>Stores operator config in the PostgreSQL <code>settings</code> table, protected by the admin key. Two verbs:</p>
+<h4>GET — read the current state</h4>
+<ul>
+<li>If a key is configured and you don't provide a valid one → <code>401 {locked:true}</code>.</li>
+<li>If a key is configured and yours is valid → returns the settings (env-overlaid).</li>
+<li>If no key exists yet → <code>200 {needsSetup:true}</code> (only key creation allowed).</li>
+</ul>
+<h4>POST — write</h4>
+<ul>
+<li><b>First run (no key):</b> only <code>{admin_key}</code> is accepted. Must be ≥16 chars. Stored as SHA-256. Requires a DSN.</li>
+<li><b>After that:</b> requires a valid key. Saves StreamTape login/key/folder-id/DSN. Secrets are only replaced when a new value is sent (blank = keep). Can optionally rotate the admin key.</li>
+</ul>
+<p>The DSN (PostgreSQL connection string) resolves as: env <code>DATABASE_URL</code>/<code>POSTGRES_URL</code> first, then the body field, then the <code>?postgres=</code> query param. Env vars always win at overlay time via <code>overlayEnv()</code>.</p>
+</div></div>
+</section>
+
+<section id="api-files">
+<h2><span class="num">16</span> GET /api/streamtape/files — List the Library</h2>
+<div class="file"><div class="fh"><span class="dot"></span><code>app/api/streamtape/files/route.ts</code><span class="tag2">Public · Cached</span></div><div class="fb">
+<p>The home page's data source. Public (no admin key) because the browser calls it on load.</p>
+<ul>
+<li>Resolves credentials server-side; returns <code>{configured:false}</code> if none.</li>
+<li>Checks the 30s in-memory cache; returns <code>{cached:true}</code> on a hit.</li>
+<li>On a miss: calls <code>listFiles(creds, folderId)</code> (paginates <code>/file/listfolder</code>), then <code>resolveThumbnails()</code> — resolves each file's splash URL with a concurrency cap of 5 (cached 10min/2min).</li>
+<li>Maps raw StreamTape files into <code>Video[]</code> objects (pretty title via <code>stripExt</code> + replacing <code>_-</code> with spaces).</li>
+<li>Caches and returns. On error → 502 with the message.</li>
+</ul>
+</div></div>
+</section>
+<section id="api-health">
+<h2><span class="num">17</span> GET /api/streamtape/health — Validate Credentials</h2>
+<div class="file"><div class="fh"><span class="dot"></span><code>app/api/streamtape/health/route.ts</code><span class="tag2">Admin Only</span></div><div class="fb"><p>Admin-only. Resolves creds server-side and calls <code>getAccountInfo()</code> (StreamTape <code>/account/info</code>). Returns <code>{configured, account, error}</code>. Used by the settings page to show the live "Live / Attention / Not configured" pill. If StreamTape rejects the creds, returns a friendly "credentials were rejected" message instead of a stack trace.</p></div></div>
+</section>
+
+<section id="api-diagnose">
+<h2><span class="num">18</span> GET /api/streamtape/diagnose — Connectivity Diagnostics</h2>
+<div class="file"><div class="fh"><span class="dot"></span><code>app/api/streamtape/diagnose/route.ts</code><span class="tag2">Admin Only</span></div><div class="fb"><p>Admin-only. A debugging tool for when "fetch failed" shows up. Runs three checks and returns a structured report:</p>
+<ul>
+<li><b>DNS</b> — <code>dns.lookup('api.streamtape.com')</code>; reports resolved IPs or the error.</li>
+<li><b>API call</b> — tries <code>getAccountInfo()</code>; reports ok/account or the error.</li>
+<li><b>Proxy</b> — checks <code>HTTPS_PROXY</code> env (masked password).</li>
+</ul>
+<p>A <code>suggest()</code> function turns the results into plain-English advice (e.g. "DNS failed — try 1.1.1.1", "set HTTPS_PROXY", "check your API/FTP password").</p></div></div>
+</section>
+
+<section id="api-videos">
+<h2><span class="num">19</span> DELETE /api/videos/[id] — Delete a Video</h2>
+<div class="file"><div class="fh"><span class="dot"></span><code>app/api/videos/[id]/route.ts</code><span class="tag2">Admin Only</span></div><div class="fb"><p>Admin-only. Takes <code>?streamtape_id=...</code> from the query, resolves creds, and calls <code>deleteFile(creds, streamtapeId)</code> (StreamTape <code>/file/delete</code>). Failures are ignored so the UI still reflects the deletion locally. The <code>[id]</code> path param is currently unused (<code>void id</code>).</p></div></div>
+</section>
+
+<section id="api-direct">
+<h2><span class="num">20</span> GET /api/videos/[id]/direct — Direct MP4 Link</h2>
+<div class="file"><div class="fh"><span class="dot"></span><code>app/api/videos/[id]/direct/route.ts</code><span class="tag2">Admin Only</span></div><div class="fb"><p>Admin-only. StreamTape requires a two-step ticket flow for direct links: first <code>/file/dlticket</code> (may have a captcha → returns null), then <code>/file/dl</code> which gives a temporary <code>direct_link</code>. These expire, so it's resolved on demand. The watch page's "Original file" button calls this to open the raw mp4 in a new tab.</p></div></div>
+</section>
+
+<section id="api-auth">
+<h2><span class="num">21</span> Auth Routes — Sign-in, Session, Guest</h2>
+<p class="lead">Five small endpoints that power the optional Google sign-in + guest mode.</p>
+<div class="file"><div class="fh"><span class="dot"></span><code>app/api/auth/config/route.ts</code><span class="tag2">Public</span></div><div class="fb"><p><b>GET</b> — exposes the client-side Firebase config (API key, auth domain, project id) from runtime env. This works on Render/Docker where <code>NEXT_PUBLIC_*</code> can't be baked in at build time. These values are public anyway (they ship to the browser).</p></div></div>
+<div class="file"><div class="fh"><span class="dot"></span><code>app/api/auth/session/route.ts</code><span class="tag2">Public</span></div><div class="fb"><p><b>POST {idToken}</b> — the browser sends the Firebase ID token after the Google popup. The server verifies it with the Admin SDK (<code>persistUserFromIdToken</code>), upserts the user into PostgreSQL, and mints an HTTP-only session cookie (<code>johanka_session</code>, 14-day expiry). Also clears the guest cookie.</p></div></div>
+<div class="file"><div class="fh"><span class="dot"></span><code>app/api/auth/me/route.ts</code><span class="tag2">Public</span></div><div class="fb"><p><b>GET</b> — returns the current user: a verified Google user (from the session cookie), a guest (from the guest cookie), or <code>null</code>. The <code>AuthProvider</code> calls this on mount to restore the session.</p></div></div>
+<div class="file"><div class="fh"><span class="dot"></span><code>app/api/auth/guest/route.ts</code><span class="tag2">Public</span></div><div class="fb"><p><b>POST {guestId?}</b> — skips auth entirely: sets a guest cookie (<code>johanka_guest</code>, 30-day expiry) with no DB row. A passed <code>guestId</code> keeps the same guest identity across reloads. Clears the session cookie (guest supersedes session).</p></div></div>
+<div class="file"><div class="fh"><span class="dot"></span><code>app/api/auth/logout/route.ts</code><span class="tag2">Public</span></div><div class="fb"><p><b>POST</b> — clears both the session and guest cookies.</p></div></div>
+</section>
+<section id="lib-streamtape">
+<h2><span class="num">22</span> lib/streamtape.ts — The StreamTape API Client</h2>
+<p class="lead">A thin wrapper around the StreamTape REST API at <code>https://api.streamtape.com</code>. Every function takes an explicit <code>StreamtapeCreds</code> argument (login + key) so the server stays stateless.</p>
+<div class="file"><div class="fh"><span class="dot"></span><code>lib/streamtape.ts</code><span class="tag2">Server Module</span></div><div class="fb">
+<p>Notable pieces:</p>
+<ul>
+<li><b><code>stFetch()</code></b> — a shared fetch wrapper that adds a real <code>User-Agent</code> (Cloudflare blocks bare "undici"), a 20s timeout, optional HTTPS proxy support (via <code>undici.ProxyAgent</code>), and <code>translateFetchError()</code> which turns Node's opaque "fetch failed" into a helpful message (DNS failed / refused / reset / timeout / TLS).</li>
+<li><b><code>request()</code></b> — builds the URL, adds <code>login</code>+<code>key</code> auth params, calls <code>stFetch</code>, parses JSON, throws <code>StreamTapeError</code> if <code>status !== 200</code>.</li>
+<li><b><code>listFiles(creds, folderId?)</code></b> — paginates <code>/file/listfolder</code> (20 pages × 100 = 2000 file cap). Maps each entry to <code>{fileid, name, size, created}</code> (note: the file id is the <code>linkid</code> field). Returns newest-first.</li>
+<li><b><code>embedUrl(fileid)</code></b> — returns <code>https://streamtape.com/e/&lt;fileid&gt;</code> (the iframe player URL).</li>
+<li><b><code>getThumbnailUrl(creds, fileid)</code></b> — hits <code>/file/getsplash</code>. Returns the auto-generated poster URL (e.g. <code>thumb.tapecontent.net/...</code>) or null while still processing / on failure.</li>
+<li><b><code>getDirectLink()</code></b> — the two-step ticket flow (<code>/file/dlticket</code> then <code>/file/dl</code>) for a temporary direct mp4 link. Returns null on captcha files.</li>
+<li><b><code>getFileInfo()</code></b>, <b><code>deleteFile()</code></b>, <b><code>getAccountInfo()</code></b>, <b><code>uploadFile()</code></b> — thinner wrappers for the corresponding endpoints.</li>
+</ul>
+<div class="callout warn"><b>Why FTP instead of the HTTP upload?</b> <code>uploadFile()</code> (StreamTape's <code>/file/uploadfile</code>) is capped at ~1MB by Cloudflare. Real videos are bigger, so uploads go over FTP instead (see <code>lib/ftp.ts</code>).</div>
+</div></div>
+</section>
+
+<section id="lib-ftp">
+<h2><span class="num">23</span> lib/ftp.ts — The FTP Uploader</h2>
+<div class="file"><div class="fh"><span class="dot"></span><code>lib/ftp.ts</code><span class="tag2">Server Module</span></div><div class="fb">
+<p>Uploads video files to StreamTape over FTP using the <code>basic-ftp</code> library, because the HTTP API caps body size at ~1MB. Flow:</p>
+<ol class="bul">
+<li><b><code>connect()</code></b> — connects to <code>ftp.streamtape.com:21</code> with the user's API/FTP creds. Tries explicit FTPS (TLS upgrade) first, falls back to plain FTP if TLS is refused/blocked.</li>
+<li><b><code>uploadViaFtp()</code></b> — prefixes the filename with a random 6-char token (so a duplicate name doesn't confuse the lookup), optionally <code>cd</code>s into the configured folder, then streams the temp file to the server with <code>client.uploadFrom(stream, remoteName)</code>. Memory stays flat because it reads from disk.</li>
+<li><b><code>resolveFileId()</code></b> — StreamTape doesn't return a file id from the FTP transfer, so this polls <code>/file/listfolder</code> up to 3 times (1.5s apart) and matches by the normalized filename (spaces→underscores). Takes the most recent match. Returns null if it can't resolve (non-fatal — the embed link is built defensively).</li>
+</ol>
+<p>The whole thing is wrapped in <code>FtpError</code> with a 502 status so the route can surface a clean message.</p>
+</div></div>
+</section>
+
+<section id="lib-multipart">
+<h2><span class="num">24</span> lib/multipart.ts — Memory-Safe Multipart Parser</h2>
+<div class="file"><div class="fh"><span class="dot"></span><code>lib/multipart.ts</code><span class="tag2">Server Module</span></div><div class="fb">
+<p>A custom, dependency-free <code>multipart/form-data</code> stream parser. <b>This is the key to handling large uploads without OOM.</b></p>
+<ul>
+<li>Next's <code>await req.formData()</code> buffers the <i>entire</i> body in memory (and <code>File.arrayBuffer()</code> makes a second copy) — a 250MB video eats ~500–750MB RAM.</li>
+<li>This parser instead consumes the body as a stream: small text fields are buffered in memory; the (huge) <code>file</code> part is written straight to a temp file on disk as bytes arrive. Peak memory is bounded by a few KB of lookahead.</li>
+<li>Exports <code>boundaryFrom()</code> (extract the boundary token), <code>parseMultipartStream()</code> (the parser), and types <code>ParsedUpload</code> / <code>MultipartFilePart</code>.</li>
+<li>The parser is a state machine (<code>headers → body → suffix</code>) that keeps a trailing window (<code>keep</code>) in case a delimiter is split across chunks, and waits for all file <code>WriteStream</code>s to finish before resolving.</li>
+</ul>
+</div></div>
+</section>
+<section id="lib-db">
+<h2><span class="num">25</span> lib/db.ts — The PostgreSQL Layer</h2>
+<div class="file"><div class="fh"><span class="dot"></span><code>lib/db.ts</code><span class="tag2">Server Module · Optional</span></div><div class="fb">
+<p>Everything here is optional — if no <code>DATABASE_URL</code> is set, none of it runs and the app falls back to env vars. Uses the <code>pg</code> driver with a cached <code>Pool</code> per connection string (max 3 connections).</p>
+<p><b>Two tables, auto-created on first use:</b></p>
+<ul>
+<li><b><code>settings</code></b> — a single-row table (<code>id BOOLEAN PRIMARY KEY DEFAULT TRUE</code> + a <code>CHECK (id = TRUE)</code> constraint enforces exactly one row). Columns: <code>streamtape_login</code>, <code>streamtape_key</code>, <code>streamtape_folder_id</code>, <code>postgres_connection_string</code>, <code>admin_key_sha</code>, <code>updated_at</code>. Additive migrations (<code>ADD COLUMN IF NOT EXISTS</code>) keep old databases working.</li>
+<li><b><code>users</code></b> — Google sign-in rows keyed by the Firebase <code>uid</code>. Columns: <code>uid, email, display_name, photo_url, provider, created_at, last_login_at, updated_at</code>.</li>
+</ul>
+<p>Functions: <code>loadSettingsFromDb</code>, <code>saveSettingsToDb</code> (upsert with <code>ON CONFLICT</code>), <code>getAdminKeySha</code> / <code>setAdminKeySha</code>, <code>upsertUser</code>, <code>getUserByUid</code>.</p>
+<div class="callout"><b>Video metadata is NOT in the DB</b> — the library always comes live from StreamTape. PostgreSQL only holds operator config + signed-in users.</div>
+</div></div>
+</section>
+
+<section id="lib-settings-lib">
+<h2><span class="num">26</span> lib/settings.ts &amp; lib/server-settings.ts</h2>
+<div class="file"><div class="fh"><span class="dot"></span><code>lib/settings.ts</code><span class="tag2">Server Module</span></div><div class="fb"><p>A tiny pure function <code>resolveSettings(client?)</code> that merges env vars over client-supplied values. <code>pick(env, fallback)</code> returns the env value if non-empty, else the fallback. Used by the data routes to get effective settings (env wins).</p></div></div>
+<div class="file"><div class="fh"><span class="dot"></span><code>lib/server-settings.ts</code><span class="tag2">Server Module</span></div><div class="fb">
+<p>The higher-level server helper used by every API route:</p>
+<ul>
+<li><b><code>envDsn()</code></b> — returns <code>DATABASE_URL</code> or <code>POSTGRES_URL</code>.</li>
+<li><b><code>loadEffectiveSettings(dsn?)</code></b> — loads settings from PostgreSQL (best-effort) then overlays env vars. This is what every route calls.</li>
+<li><b><code>overlayEnv(db)</code></b> — the inverse for the /settings response (returns snake_case settings with env overlaid).</li>
+<li><b>Admin key</b> — <code>sha256Hex()</code>, <code>hashEqual()</code> (timing-safe compare to prevent timing attacks), <code>envAdminKey()</code>, <code>adminKeyConfigured()</code>, <code>adminTokenValid()</code> (compares the SHA of the provided token to the stored hash), <code>storeAdminKey()</code>, <code>adminTokenFromRequest()</code> (reads <code>Authorization: Bearer</code> or <code>?key=</code>), <code>isAdminRequest()</code>.</li>
+</ul>
+<div class="callout warn"><b>Security note:</b> the admin key is compared using <code>timingSafeEqual</code> on the SHA-256 hashes, which prevents timing-attack-based key guessing. The env var (<code>JOHANKA_ADMIN_KEY</code>) always wins over the DB hash.</div>
+</div></div>
+</section>
+
+<section id="lib-auth">
+<h2><span class="num">27</span> lib/auth.ts &amp; lib/use-auth.tsx &amp; lib/firebase-client.ts</h2>
+<div class="file"><div class="fh"><span class="dot"></span><code>lib/auth.ts</code><span class="tag2">Server Module</span></div><div class="fb"><p>Server-only Firebase helpers. <code>firebaseConfigured()</code> checks the three service-account env vars. <code>adminApp()</code> lazily initializes the Admin SDK. <code>persistUserFromIdToken()</code> verifies the token, builds an <code>AuthUser</code>, and upserts to PostgreSQL (best-effort). <code>sessionCookieForIdToken()</code> mints a 14-day session cookie. <code>userFromSessionCookie()</code> verifies it. Cookie names: <code>johanka_session</code> (14d) and <code>johanka_guest</code> (30d).</p></div></div>
+<div class="file"><div class="fh"><span class="dot"></span><code>lib/use-auth.tsx</code><span class="tag2">Client Component</span></div><div class="fb"><p>The React <code>AuthProvider</code> + <code>useAuth()</code> hook (React Context). On mount it loads the runtime Firebase config and calls <code>/api/auth/me</code> to restore the session; if anonymous but a guest id was saved in localStorage, it quietly re-establishes the guest. Exposes <code>{status, user, firebaseEnabled, signIn, continueAsGuest, signOut}</code>. <code>signIn</code> opens the Google popup via the SDK and posts the ID token to <code>/api/auth/session</code>.</p></div></div>
+<div class="file"><div class="fh"><span class="dot"></span><code>lib/firebase-client.ts</code><span class="tag2">Client Module</span></div><div class="fb"><p>Browser Firebase glue. <code>loadFirebaseConfig()</code> fetches config from <code>/api/auth/config</code> at runtime (with a build-time inline fallback). <code>signInWithGoogle()</code> <b>lazily imports</b> the firebase SDK only when the user clicks the button — keeping the main bundle small — then opens the popup and returns the ID token.</p></div></div>
+</section>
+<section id="lib-others">
+<h2><span class="num">28</span> lib/ — The Smaller Helpers</h2>
+<div class="file"><div class="fh"><span class="dot"></span><code>lib/types.ts</code><span class="tag2">Shared Types</span></div><div class="fb"><p>The shared TypeScript types: <code>Video</code> (the core object with id, streamtape_id, title, thumbnail, embed_url, etc.), <code>AppSettings</code>, <code>VideoDraft</code>, <code>UploadOutcome</code>, <code>AuthUser</code> (with <code>guest</code>/<code>guestId</code>), <code>VideoStatus</code>.</p></div></div>
+<div class="file"><div class="fh"><span class="dot"></span><code>lib/format.ts</code><span class="tag2">Isomorphic</span></div><div class="fb"><p>Small formatting helpers used everywhere: <code>formatBytes()</code> (B→TB), <code>formatDuration()</code> (seconds → <code>h:mm:ss</code> or <code>m:ss</code>), <code>timeAgo()</code> ("just now"/"3h ago"/"2d ago"...), <code>clampUsername()</code> (sanitizes titles), <code>stripExt()</code> (removes file extension).</p></div></div>
+<div class="file"><div class="fh"><span class="dot"></span><code>lib/id.ts</code><span class="tag2">Isomorphic</span></div><div class="fb"><p><code>createId(len=10)</code> — a random id generator using <code>crypto.getRandomValues</code> (falls back to <code>Math.random</code>). Used for temp file names and video ids.</p></div></div>
+<div class="file"><div class="fh"><span class="dot"></span><code>lib/remote.ts</code><span class="tag2">Client Module</span></div><div class="fb"><p><code>fetchRemoteVideos()</code> — a tiny client helper that <code>fetch("/api/streamtape/files")</code> and returns the <code>Video[]</code>, or <code>[]</code> on failure. Used by the home + watch pages.</p></div></div>
+<div class="file"><div class="fh"><span class="dot"></span><code>lib/localstore.ts</code><span class="tag2">Client Module</span></div><div class="fb"><p>Browser localStorage helpers — a <b>fallback only</b>: <code>getStoredVideos</code>, <code>saveStoredVideos</code>, <code>getStoredVideo</code>, <code>upsertStoredVideo</code>, <code>removeStoredVideo</code>. Also exports <code>HISTORY_KEY</code>. Settings/keys never touch localStorage (those are server-side in PostgreSQL).</p></div></div>
+<div class="file"><div class="fh"><span class="dot"></span><code>lib/admin-auth.ts</code><span class="tag2">Client Module</span></div><div class="fb"><p>A tiny in-memory holder for the admin key (a module-level <code>let adminKey</code>). <code>getAdminKey/setAdminKey/clearAdminKey/isAdmin</code> + <code>authHeaders()</code> which returns <code>{Authorization: "Bearer &lt;key&gt;"}</code>. Deliberately NOT persisted — a reload of /settings re-prompts. The watch page reads <code>isAdmin()</code> to show/hide admin-only actions.</p></div></div>
+</section>
+
+<section id="comp-nav">
+<h2><span class="num">29</span> components/Nav.tsx — Top Bar &amp; Sidebar</h2>
+<div class="file"><div class="fh"><span class="dot"></span><code>components/Nav.tsx</code><span class="tag2">Client Component</span></div><div class="fb">
+<p>A Render-style dashboard shell. Exports <code>Logo</code>, <code>TopBar</code>, <code>Sidebar</code>, and an <code>AccountMenu</code>.</p>
+<ul>
+<li><b><code>TopBar</code></b> — a sticky top bar with the logo, a search box (on mobile, a slide-down), nav links (Library/Upload/Settings) on mobile, and the account menu. The account menu shows the user's avatar + name and a "Sign out" button.</li>
+<li><b><code>SearchInput</code></b> — the search box is bound to the <code>?q=</code> URL param (source of truth). It mirrors the URL into the box on navigation and pushes <code>/?q=...</code> on submit. Wrapped in <code>&lt;Suspense&gt;</code> because <code>useSearchParams</code> requires it.</li>
+<li><b><code>Sidebar</code></b> — the left nav (desktop only, <code>md:flex</code>). Sticky below the top bar. Shows the three nav items with an accent bar on the active one (active = exact match for <code>/</code>, startsWith for others).</li>
+</ul>
+</div></div>
+</section>
+
+<section id="comp-auth">
+<h2><span class="num">30</span> components/AuthGate.tsx &amp; AuthScreen.tsx</h2>
+<div class="file"><div class="fh"><span class="dot"></span><code>components/AuthGate.tsx</code><span class="tag2">Client Component</span></div><div class="fb"><p>Gates the app behind auth. Reads <code>useAuth().status</code>: <code>loading</code> → spinner; <code>anon</code> → <code>&lt;AuthScreen/&gt;</code>; otherwise → the children. This is what makes the sign-in screen appear before the app.</p></div></div>
+<div class="file"><div class="fh"><span class="dot"></span><code>components/AuthScreen.tsx</code><span class="tag2">Client Component</span></div><div class="fb"><p>A centered card with the logo, "Sign in to Johanka", a Google button (only if Firebase is configured — else a "not configured" note), an "or" divider, and a "Continue as guest" button. Shows errors from the auth context.</p></div></div>
+</section>
+<section id="comp-player">
+<h2><span class="num">31</span> components/Player.tsx — The Video Player</h2>
+<div class="file"><div class="fh"><span class="dot"></span><code>components/Player.tsx</code><span class="tag2">Client Component</span></div><div class="fb">
+<p>Embeds StreamTape's player via <code>&lt;iframe&gt;</code> and layers a poster + play button on top for a seamless look.</p>
+<ul>
+<li>The iframe <code>src</code> is the video's <code>embed_url</code> (<code>https://streamtape.com/e/&lt;id&gt;</code>).</li>
+<li>A <code>&lt;Thumb&gt;</code> poster sits <i>above</i> the iframe (<code>z-10</code>) with <code>pointer-events-none</code> so clicks pass through to the player, until <code>onLoad</code> fires and <code>ready</code> becomes true (then the poster disappears).</li>
+<li>If there's no embed URL (upload still processing), shows the poster dimmed with a "No playable URL yet" message and no play button.</li>
+</ul>
+<div class="callout"><b>Why an iframe?</b> StreamTape hosts the file and provides a free player. Embedding it means Johanka does zero transcoding, zero bandwidth, zero storage. The trade-off: playback is StreamTape's player, not a custom one.</div>
+</div></div>
+</section>
+
+<section id="comp-cards">
+<h2><span class="num">32</span> components/VideoCard, VideoGrid, HeroVideo</h2>
+<div class="file"><div class="fh"><span class="dot"></span><code>components/VideoCard.tsx</code><span class="tag2">Server/Client</span></div><div class="fb"><p>A single video card. A <code>&lt;Link href="/watch/&lt;id&gt;"&gt;</code> wrapping a thumbnail (<code>&lt;Thumb&gt;</code>), a duration badge (if known), a hover-play overlay, the title (1-line clamp), and meta (time ago + size). Gentle hover states (ring accent, slight image zoom).</p></div></div>
+<div class="file"><div class="fh"><span class="dot"></span><code>components/VideoGrid.tsx</code><span class="tag2">Server/Client</span></div><div class="fb"><p>A responsive CSS grid wrapper. <code>compact</code> shrinks columns (for rails like related videos). Shows an empty-state line when there are no videos.</p></div></div>
+<div class="file"><div class="fh"><span class="dot"></span><code>components/HeroVideo.tsx</code><span class="tag2">Client Component</span></div><div class="fb"><p>A cinematic featured banner. Full-bleed poster backdrop with two gradient scrims (left-dark for text, top for balance), a "Featured" badge, the title, description, a "Watch now" accent button, and meta. Aspect ratio scales from 4/5 (mobile) to 21/9 (desktop).</p></div></div>
+</section>
+
+<section id="comp-others">
+<h2><span class="num">33</span> components/Thumb, GradientThumb, ContinueWatching, WatchActions, icons</h2>
+<div class="file"><div class="fh"><span class="dot"></span><code>components/Thumb.tsx</code><span class="tag2">Client Component</span></div><div class="fb"><p>A smart thumbnail that renders an <code>&lt;img&gt;</code> if <code>src</code> exists, and falls back to <code>&lt;GradientThumb&gt;</code> if missing or on error. Keeps freshly-uploaded (still-processing) videos looking clean.</p></div></div>
+<div class="file"><div class="fh"><span class="dot"></span><code>components/GradientThumb.tsx</code><span class="tag2">Server Component</span></div><div class="fb"><p>A deterministic placeholder: hashes the seed string and picks one of 6 tasteful dark gradients, with a faint film icon centered. Same video → same colors (consistency without backend work).</p></div></div>
+<div class="file"><div class="fh"><span class="dot"></span><code>components/ContinueWatching.tsx</code><span class="tag2">Client Component</span></div><div class="fb"><p>A "Continue watching" row driven by localStorage history. Exports <code>readHistory()</code> and <code>pushHistory(id)</code>. The component reads history, matches ids to the current library, drops unknowns, and shows up to 6 recent. Disappears when empty.</p></div></div>
+<div class="file"><div class="fh"><span class="dot"></span><code>components/WatchActions.tsx</code><span class="tag2">Client Component</span></div><div class="fb"><p>The watch-page action bar: pushes to history on mount, "Copy link" (clipboard), and admin-only "Original file" (calls <code>/api/videos/[id]/direct</code>) + "Delete" (calls <code>DELETE /api/videos/[id]</code> then removes locally). Admin actions appear only when <code>isAdmin()</code>.</p></div></div>
+<div class="file"><div class="fh"><span class="dot"></span><code>components/icons.tsx</code><span class="tag2">Server/Client</span></div><div class="fb"><p>A minimal inline-SVG icon set (Lucide-style, stroke-based) — Play, Upload, Home, Search, Settings, Trash, Clock, File, Check, Copy, Link, Film, Arrow, Plus, Menu, X, Database, Key, ArrowUpRight, User. No icon-library dependency; keeps the bundle tiny.</p></div></div>
+</section>
+<section id="flow-upload">
+<h2><span class="num">34</span> Flow: Uploading a Video (end-to-end)</h2>
+<p class="lead">This is the single most important flow to understand. Here's exactly what happens when you drag a video onto the upload page.</p>
+<div class="flow">
+<div class="step"><b>1. Browser</b><span>drag &amp; drop →<br>XMLHttpRequest POST<br>/api/upload (FormData)</span></div>
+<div class="arr">&rarr;</div>
+<div class="step"><b>2. Route</b><span>parseMultipartStream<br>streams file to disk<br>temp file (no OOM)</span></div>
+<div class="arr">&rarr;</div>
+<div class="step"><b>3. lib/ftp</b><span>FTP connect (FTLS→plain)<br>cd into folder<br>uploadFrom(stream)</span></div>
+<div class="arr">&rarr;</div>
+<div class="step"><b>4. StreamTape</b><span>file lands in account/folder</span></div>
+</div>
+<div class="flow">
+<div class="step"><b>5. lib/ftp</b><span>resolveFileId:<br>poll /file/listfolder<br>match by name</span></div>
+<div class="arr">&rarr;</div>
+<div class="step"><b>6. lib/streamtape</b><span>embedUrl(id)<br>getThumbnailUrl(id)</span></div>
+<div class="arr">&rarr;</div>
+<div class="step"><b>7. Route</b><span>cleanup temp files<br>return {video} 201</span></div>
+<div class="arr">&rarr;</div>
+<div class="step"><b>8. Browser</b><span>save to localStorage<br>redirect /watch/&lt;id&gt;</span></div>
+</div>
+<p>Key insight: the server touches the video bytes only briefly (browser → temp file → FTP). It never holds the whole file in memory, and deletes the temp file immediately after. StreamTape then processes it (a few seconds to minutes) and generates the thumbnail, which the library listing picks up on the next refresh.</p>
+</section>
+
+<section id="flow-listing">
+<h2><span class="num">35</span> Flow: Listing the Library (home page load)</h2>
+<div class="flow">
+<div class="step"><b>1. Home page</b><span>useEffect →<br>fetchRemoteVideos()</span></div>
+<div class="arr">&rarr;</div>
+<div class="step"><b>2. API</b><span>GET /api/streamtape/files</span></div>
+<div class="arr">&rarr;</div>
+<div class="step"><b>3. Cache check</b><span>30s listing cache hit?<br>yes → return early</span></div>
+</div>
+<div class="flow">
+<div class="step"><b>4. lib/streamtape</b><span>listFiles()<br>paginate /file/listfolder</span></div>
+<div class="arr">&rarr;</div>
+<div class="step"><b>5. Thumbnails</b><span>resolveThumbnails()<br>5-way concurrency<br>10min cache (2min null)</span></div>
+<div class="arr">&rarr;</div>
+<div class="step"><b>6. Return</b><span>map to Video[]<br>cache + respond</span></div>
+<div class="arr">&rarr;</div>
+<div class="step"><b>7. Browser</b><span>setState(videos)<br>render grid + hero</span></div>
+</div>
+<p>If the fetch fails or returns no videos, the home page falls back to <code>getStoredVideos()</code> (localStorage). Search filtering happens entirely client-side (no API call) — it just filters the already-loaded array by <code>?q=</code>.</p>
+</section>
+
+<section id="flow-auth">
+<h2><span class="num">36</span> Flow: Auth &amp; Admin Access</h2>
+<h3>Google sign-in</h3>
+<div class="flow">
+<div class="step"><b>1. AuthScreen</b><span>click "Continue with Google"</span></div>
+<div class="arr">&rarr;</div>
+<div class="step"><b>2. firebase-client</b><span>lazy import SDK<br>signInWithPopup()<br>→ ID token</span></div>
+<div class="arr">&rarr;</div>
+<div class="step"><b>3. POST /api/auth/session</b><span>verify token (Admin SDK)<br>upsert user in PG<br>mint session cookie</span></div>
+<div class="arr">&rarr;</div>
+<div class="step"><b>4. Browser</b><span>cookie johanka_session<br>status=authed</span></div>
+</div>
+<h3>Guest mode</h3>
+<p>Simpler: <code>POST /api/auth/guest</code> sets a <code>johanka_guest</code> cookie (no DB row). The guest id is saved in localStorage so the same guest identity survives a lapsed cookie.</p>
+<h3>Admin unlock (the /settings page)</h3>
+<div class="flow">
+<div class="step"><b>1. GET /api/settings</b><span>needsSetup? → create key<br>else locked → prompt</span></div>
+<div class="arr">&rarr;</div>
+<div class="step"><b>2. Enter key</b><span>setAdminKey (in-memory)<br>reload with Bearer header</span></div>
+<div class="arr">&rarr;</div>
+<div class="step"><b>3. Server</b><span>adminTokenValid:<br>SHA-256 compare<br>(timing-safe)</span></div>
+<div class="arr">&rarr;</div>
+<div class="step"><b>4. Unlocked</b><span>read/save config<br>health/diagnose</span></div>
+</div>
+<p>The admin key is held only in the current tab's memory; a reload re-prompts. The env var <code>JOHANKA_ADMIN_KEY</code> always wins over a DB-stored hash.</p>
+</section>
+<section id="deploy">
+<h2><span class="num">37</span> Running &amp; Deployment</h2>
+<h3>37.1 Run locally (dev)</h3>
+<pre><code><span class="com"># Requirements: Node 20+</span>
+npm install
+
+<span class="com"># StreamTape creds — free account at streamtape.com → Account → API/FTP</span>
+export STREAMTAPE_LOGIN=your_api_ftp_username
+export STREAMTAPE_KEY=your_api_ftp_password
+<span class="com"># Optional: one folder only (id from streamtape.com/f/&lt;folder-id&gt;/…)</span>
+export STREAMTAPE_FOLDER_ID=
+
+npm run dev        <span class="com"># → http://localhost:3000  (upload at /upload)</span></code></pre>
+
+<h3>37.2 Production build</h3>
+<pre><code>npm run build && npm start
+<span class="com"># npm start runs: node .next/standalone/server.js</span></code></pre>
+
+<h3>37.3 Docker</h3>
+<pre><code><span class="com"># Build with the host's git version stamped into the image</span>
+APP_VERSION="$(git describe --tags --always)" docker compose up --build -d</code></pre>
+<p>The <code>Dockerfile</code> is a two-stage build:</p>
+<ul class="bul">
+<li><b>Builder</b> — installs build tools, runs <code>npm ci</code>, then <code>npm run build</code>. <code>APP_VERSION</code> is passed as a build arg (since <code>.git</code> is excluded from the image, git version resolution can't run inside).</li>
+<li><b>Runner</b> — copies <code>.next/standalone</code> + <code>.next/static</code> + <code>public</code>. Installs only <code>wget</code> (for the healthcheck) — no ffmpeg, keeping the image small. Runs <code>node server.js</code> on port 3000.</li>
+</ul>
+<p><b><code>docker-compose.yml</code></b> maps port 3000, passes all env vars (<code>STREAMTAPE_*</code>, <code>DATABASE_URL</code>, <code>FIREBASE_*</code>), and adds a <code>wget</code>-based healthcheck. <b><code>scripts/standalone-copy.mjs</code></b> is the <code>postbuild</code> step that copies static+public into <code>.next/standalone</code> so the standalone server is fully self-contained.</p>
+<div class="callout tip"><b>Recommended production setup:</b> set <code>STREAMTAPE_LOGIN</code>/<code>STREAMTAPE_KEY</code> and optionally <code>JOHANKA_ADMIN_KEY</code> and <code>DATABASE_URL</code> as env vars (they always win and survive a fresh DB). Use the <code>/settings</code> UI only if you're storing them in PostgreSQL.</div>
+</section>
+
+<section id="glossary">
+<h2><span class="num">38</span> Glossary of Terms</h2>
+<p class="lead">Quick definitions of every term you'll bump into while reading this project.</p>
+<table>
+<thead><tr><th>Term</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><b>Next.js</b></td><td>A React framework that adds file-based routing, server rendering, and API routes. This project uses the App Router (folders = URLs, in <code>app/</code>).</td></tr>
+<tr><td><b>Server Component</b></td><td>A component that renders on the server and ships HTML. Can't use hooks/state.</td></tr>
+<tr><td><b>Client Component</b></td><td>A component (starts with <code>"use client"</code>) that runs in the browser and can use state, effects, and events.</td></tr>
+<tr><td><b>Route Handler</b></td><td>An API endpoint — a <code>route.ts</code> file exporting HTTP-verb functions like <code>GET</code>/<code>POST</code>.</td></tr>
+<tr><td><b>Dynamic Route</b></td><td>A URL segment in square brackets, e.g. <code>[id]</code>, that matches any value at runtime.</td></tr>
+<tr><td><b>Route Group</b></td><td>A folder in parentheses <code>(home)</code> that groups routes without affecting the URL.</td></tr>
+<tr><td><b>StreamTape</b></td><td>The free file-hosting service that stores and streams the actual video files. Johanka's backend-of-choice.</td></tr>
+<tr><td><b>FTP / FTPS / FTLS</b></td><td>File Transfer Protocol. Johanka uploads videos to StreamTape over FTP (FTPS = FTP over TLS; the code tries secure then falls back to plain).</td></tr>
+<tr><td><b>multipart/form-data</b></td><td>The encoding used to upload a file with form fields. Johanka has a custom stream parser for it to avoid loading the whole file in memory.</td></tr>
+<tr><td><b>PostgreSQL (PG)</b></td><td>An optional SQL database. Stores operator settings + Google sign-in users.</td></tr>
+<tr><td><b>Firebase / Firebase Admin</b></td><td>Google's auth platform. The browser SDK signs in; the Admin SDK verifies tokens and mints session cookies.</td></tr>
+<tr><td><b>ID Token / Session Cookie</b></td><td>The ID token is from Google sign-in; the session cookie is an HTTP-only cookie the server sets so the browser stays signed in.</td></tr>
+<tr><td><b>Admin key</b></td><td>A long passphrase (env or PG hash) that unlocks the /settings operator dashboard.</td></tr>
+<tr><td><b>localStorage</b></td><td>A browser storage area for the current site. Johanka uses it only for a fallback video catalog and watch history.</td></tr>
+<tr><td><b>SSR / hydration</b></td><td>Server-Side Rendering: server produces HTML, then React "hydrates" it in the browser to make it interactive. Client components are what get hydrated.</td></tr>
+<tr><td><b>OOM (out of memory)</b></td><td>When a process runs out of RAM. Johanka's design specifically avoids this during large uploads.</td></tr>
+<tr><td><b>healthcheck</b></td><td>A command the container orchestrator runs to decide if the app is healthy (Docker: <code>wget localhost:3000</code>).</td></tr>
+</tbody>
+</table>
+
+<div class="callout tip">
+<b>Where to go next:</b> open the project in your editor, and read the files in this order: <code>package.json</code> → <code>next.config.ts</code> → <code>app/layout.tsx</code> → <code>app/(home)/page.tsx</code> → <code>app/api/streamtape/files/route.ts</code> → <code>lib/streamtape.ts</code> → <code>lib/ftp.ts</code> → <code>app/api/upload/route.ts</code> → <code>lib/multipart.ts</code>. That's the backbone of the whole app.
+</div>
+</section>
+
+<footer style="border-top:1px solid var(--line-soft);padding:30px 0;text-align:center;color:var(--faint);font-size:13px">
+Johanka project documentation · generated for learning · Next.js 15 · React 19 · TypeScript
+</footer>
+<a class="top-link" href="#top" title="Back to top">&uarr;</a>
+</main>
+</div>
+</body>
+</html>
