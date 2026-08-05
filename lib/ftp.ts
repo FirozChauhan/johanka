@@ -21,13 +21,16 @@ import type { StreamtapeCreds } from "./streamtape";
   ----
   1. Connect to ftp.streamtape.com:21 with the user's creds (plain FTP, with
      an opportunistic TLS upgrade).
-  2. Upload the file bytes to a unique remote name in the root folder.
-  3. Close the FTP session.
-  4. Resolve the resulting StreamTape file id. StreamTape doesn't return a file
-     id from the FTP transfer itself, so we ask /file/listfolder and match by
-     the exact filename we just uploaded. If multiple share a name, we take the
-     most recent. If we still can't resolve it, the embed link is built
-     defensively so playback still works once StreamTape finishes processing.
+  2. When a `folderId` is given, cd into that folder first (best-effort — if
+     the FTP server can't enter it we fall back to the account root).
+  3. Upload the file bytes to a unique remote name.
+  4. Close the FTP session.
+  5. Resolve the resulting StreamTape file id. StreamTape doesn't return a file
+     id from the FTP transfer itself, so we ask /file/listfolder (scoped to the
+     folder the file landed in) and match by the exact filename we just
+     uploaded. If multiple share a name, we take the most recent. If we still
+     can't resolve it, the embed link is built defensively so playback still
+     works once StreamTape finishes processing.
 */
 
 const FTP_HOST = "ftp.streamtape.com";
@@ -127,7 +130,8 @@ async function connect(creds: StreamtapeCreds): Promise<ftp.Client> {
 export async function uploadViaFtp(
   creds: StreamtapeCreds,
   filePath: string,
-  name: string
+  name: string,
+  folderId?: string
 ): Promise<FtpUploadResult> {
   if (!creds.streamtape_login || !creds.streamtape_key) {
     throw new FtpError(
@@ -145,6 +149,23 @@ export async function uploadViaFtp(
   const remoteName = `${createId(6)}_${base}${ext}`;
 
   const client = await connect(creds);
+  // The folder we actually uploaded into (used to scope the file-id lookup).
+  // Best-effort: if the FTP server can't cd into the folder we silently land
+  // in the account root instead — the file still uploads fine.
+  let landedFolder: string | undefined;
+  const folder = folderId?.trim() || "";
+  if (folder) {
+    try {
+      await client.cd(folder);
+      landedFolder = folder;
+    } catch (err) {
+      console.warn(
+        `[ftp] could not cd into folder "${folder}" — uploaded to the account root instead (it won't show in a folder-scoped library). Check the folder id in /settings:`,
+        (err as Error).message
+      );
+    }
+  }
+
   try {
     const stream = fs.createReadStream(filePath);
     // basic-ftp's uploadFrom takes a Readable; it streams from disk over the
@@ -156,27 +177,35 @@ export async function uploadViaFtp(
   }
   client.close();
 
-  // Resolve the StreamTape file id by listing the root folder and matching
-  // the exact remote name we just wrote.
-  const fileid = await resolveFileId(creds, remoteName);
+  // Resolve the StreamTape file id by listing the folder the file landed in
+  // and matching the exact remote name we just wrote.
+  const fileid = await resolveFileId(creds, remoteName, landedFolder);
   return { fileid, remoteName };
 }
 
-/** Ask StreamTape's API for the file id matching `remoteName` (root folder). */
+/** Ask StreamTape's API for the file id matching `remoteName` (root folder, or
+ * the given folder id when provided). */
 async function resolveFileId(
   creds: StreamtapeCreds,
-  remoteName: string
+  remoteName: string,
+  folderId?: string
 ): Promise<string | null> {
   // StreamTape may take a few seconds to index an FTP-uploaded file before it
   // appears in /file/listfolder, so we poll a few times with a short delay.
   //
-  // IMPORTANT: the `folder` param must be OMITTED to list the root folder.
-  // Sending `folder=` (empty) returns `403 Not your folder`.
+  // IMPORTANT: only send the `folder` param when we have a real folder id — an
+  // empty `folder=` returns `403 Not your folder`.
   const target = normName(remoteName);
-  const url = (page: number) =>
-    `https://api.streamtape.com/file/listfolder?login=${encodeURIComponent(
-      creds.streamtape_login!
-    )}&key=${encodeURIComponent(creds.streamtape_key!)}&per_page=100&page=${page}`;
+  const url = (page: number) => {
+    const p = new URLSearchParams({
+      login: creds.streamtape_login!,
+      key: creds.streamtape_key!,
+      per_page: "100",
+      page: String(page),
+    });
+    if (folderId) p.set("folder", folderId);
+    return `https://api.streamtape.com/file/listfolder?${p.toString()}`;
+  };
 
   // Keep polling SHORT — every 15s+ of polling adds to request latency, and
   // on Render the proxy times out long requests (=> 502). The FTP upload

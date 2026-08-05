@@ -5,24 +5,18 @@ import type { AppSettings } from "./types";
   Optional PostgreSQL store.
 
   Two things live here:
-  1. The video catalog — enriched metadata (posters, descriptions, durations)
-     keyed by StreamTape file id.
-  2. App settings — the operator config (StreamTape / the DSN itself)
-     persisted server-side so it survives across browsers and incognito
-     sessions (no more localStorage-only settings).
+  1. App settings — the operator config (StreamTape creds, the folder id, the
+     DSN itself) persisted server-side so it survives across browsers and
+     incognito sessions (no more localStorage-only settings).
+  2. Users — Google sign-in rows, persisted best-effort.
 
-  Everything degrades gracefully: if no connection string is configured the app
-  simply falls back to the raw StreamTape listing. The connection string can
-  come from env (DATABASE_URL / POSTGRES_URL) or the /settings page.
+  Everything degrades gracefully: if no connection string is configured the
+  settings simply fall back to env vars. The connection string can come from
+  env (DATABASE_URL / POSTGRES_URL) or the /settings page.
+
+  NOTE: video metadata is intentionally NOT stored here anymore — the library
+  comes straight from StreamTape (see lib/streamtape.ts + /api/streamtape/files).
 */
-
-export interface DbVideoMeta {
-  streamtape_id: string;
-  title?: string | null;
-  description?: string | null;
-  duration_secs?: number | null;
-  poster_url?: string | null;
-}
 
 // Cache one pool per distinct connection string so we don't rebuild pools on
 // every request in the stateless, config-in-browser model.
@@ -42,89 +36,6 @@ export function getPool(connectionString: string): Pool {
   return pool;
 }
 
-export async function ensureVideosTable(pool: Pool): Promise<void> {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS videos (
-      streamtape_id    TEXT PRIMARY KEY,
-      title            TEXT,
-      description      TEXT,
-      filename         TEXT,
-      size_bytes       BIGINT,
-      created_at       BIGINT,
-      duration_secs    INTEGER,
-      poster_url       TEXT,
-      updated_at       BIGINT
-    );
-  `);
-}
-
-export interface VideoUpsert {
-  streamtape_id: string;
-  title?: string | null;
-  description?: string | null;
-  filename?: string | null;
-  size_bytes?: number | null;
-  duration_secs?: number | null;
-  poster_url?: string | null;
-}
-
-export async function upsertVideo(
-  connectionString: string,
-  meta: VideoUpsert
-): Promise<void> {
-  const pool = getPool(connectionString);
-  await ensureVideosTable(pool);
-  await pool.query(
-    `INSERT INTO videos
-       (streamtape_id, title, description, filename, size_bytes, duration_secs,
-        poster_url, updated_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
-     ON CONFLICT (streamtape_id) DO UPDATE SET
-       title            = EXCLUDED.title,
-       description      = EXCLUDED.description,
-       filename         = EXCLUDED.filename,
-       size_bytes       = EXCLUDED.size_bytes,
-       duration_secs    = EXCLUDED.duration_secs,
-       poster_url       = EXCLUDED.poster_url,
-       updated_at       = EXCLUDED.updated_at`,
-    [
-      meta.streamtape_id,
-      meta.title ?? null,
-      meta.description ?? null,
-      meta.filename ?? null,
-      meta.size_bytes ?? null,
-      meta.duration_secs ?? null,
-      meta.poster_url ?? null,
-      Math.floor(Date.now() / 1000),
-    ]
-  );
-}
-
-export async function fetchVideosMeta(
-  connectionString: string,
-  ids: string[]
-): Promise<Map<string, DbVideoMeta>> {
-  const pool = getPool(connectionString);
-  await ensureVideosTable(pool);
-  const out = new Map<string, DbVideoMeta>();
-  if (ids.length === 0) return out;
-  const res = await pool.query(
-    `SELECT streamtape_id, title, description, duration_secs, poster_url
-     FROM videos WHERE streamtape_id = ANY($1::text[])`,
-    [ids]
-  );
-  for (const row of res.rows) {
-    out.set(row.streamtape_id, {
-      streamtape_id: row.streamtape_id,
-      title: row.title,
-      description: row.description,
-      duration_secs: row.duration_secs,
-      poster_url: row.poster_url,
-    });
-  }
-  return out;
-}
-
 /* --------------------------------- Settings --------------------------------- */
 
 /*
@@ -141,15 +52,19 @@ export async function ensureSettingsTable(pool: Pool): Promise<void> {
       id                        BOOLEAN PRIMARY KEY DEFAULT TRUE,
       streamtape_login          TEXT,
       streamtape_key            TEXT,
+      streamtape_folder_id      TEXT,
       postgres_connection_string TEXT,
       admin_key_sha             TEXT,
       updated_at                BIGINT,
       CONSTRAINT settings_singleton CHECK (id = TRUE)
     );
   `);
-  // Additive migration guard for databases created before admin keys existed.
+  // Additive migration guards for databases created before a column existed.
   await pool.query(
     `ALTER TABLE settings ADD COLUMN IF NOT EXISTS admin_key_sha TEXT`
+  );
+  await pool.query(
+    `ALTER TABLE settings ADD COLUMN IF NOT EXISTS streamtape_folder_id TEXT`
   );
 }
 
@@ -164,6 +79,7 @@ export async function loadSettingsFromDb(
   return {
     streamtape_login: r.streamtape_login ?? undefined,
     streamtape_key: r.streamtape_key ?? undefined,
+    streamtape_folder_id: r.streamtape_folder_id ?? undefined,
     postgres_connection_string: r.postgres_connection_string ?? undefined,
   };
 }
@@ -176,16 +92,19 @@ export async function saveSettingsToDb(
   await ensureSettingsTable(pool);
   await pool.query(
     `INSERT INTO settings
-       (id, streamtape_login, streamtape_key, postgres_connection_string, updated_at)
-     VALUES (TRUE, $1,$2,$3,$4)
+       (id, streamtape_login, streamtape_key, streamtape_folder_id,
+        postgres_connection_string, updated_at)
+     VALUES (TRUE, $1,$2,$3,$4,$5)
      ON CONFLICT (id) DO UPDATE SET
        streamtape_login           = EXCLUDED.streamtape_login,
        streamtape_key             = EXCLUDED.streamtape_key,
+       streamtape_folder_id       = EXCLUDED.streamtape_folder_id,
        postgres_connection_string = EXCLUDED.postgres_connection_string,
        updated_at                 = EXCLUDED.updated_at`,
     [
       settings.streamtape_login ?? null,
       settings.streamtape_key ?? null,
+      settings.streamtape_folder_id ?? null,
       settings.postgres_connection_string ?? null,
       Math.floor(Date.now() / 1000),
     ]

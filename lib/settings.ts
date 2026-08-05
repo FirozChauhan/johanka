@@ -12,6 +12,7 @@ import type { AppSettings } from "./types";
 export interface ResolvedSettings {
   streamtape_login?: string;
   streamtape_key?: string;
+  streamtapeFolderId?: string;
   postgresConnectionString?: string;
 }
 
@@ -26,6 +27,10 @@ export function resolveSettings(client?: Partial<AppSettings>): ResolvedSettings
   return {
     streamtape_login: pick(process.env.STREAMTAPE_LOGIN, client?.streamtape_login),
     streamtape_key: pick(process.env.STREAMTAPE_KEY, client?.streamtape_key),
+    streamtapeFolderId: pick(
+      process.env.STREAMTAPE_FOLDER_ID,
+      client?.streamtape_folder_id
+    ),
     postgresConnectionString: pick(
       process.env.DATABASE_URL || process.env.POSTGRES_URL,
       client?.postgres_connection_string

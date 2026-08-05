@@ -32,8 +32,12 @@ export interface Video {
 export interface AppSettings {
   streamtape_login?: string;
   streamtape_key?: string;
-  /** Optional PostgreSQL connection string. Persists /settings config and
-   * enriches the catalog. */
+  /** Optional StreamTape folder id. When set, the library lists files from
+   * this folder only (and new uploads are placed inside it) instead of the
+   * account root. Find it in the folder's StreamTape URL
+   * (https://streamtape.com/f/<folder-id>/<name>). */
+  streamtape_folder_id?: string;
+  /** Optional PostgreSQL connection string. Persists /settings config. */
   postgres_connection_string?: string;
 }
 

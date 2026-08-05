@@ -121,6 +121,12 @@ export async function POST(req: NextRequest) {
     const next: AppSettings = {
       ...existing,
       streamtape_login: pick(body.streamtape_login, existing.streamtape_login),
+      // The folder id is optional — an explicitly empty value clears it so the
+      // library falls back to the whole account again.
+      streamtape_folder_id:
+        body.streamtape_folder_id !== undefined
+          ? body.streamtape_folder_id.trim() || undefined
+          : existing.streamtape_folder_id,
       postgres_connection_string: dsn,
     };
     // Secrets are only replaced when a new value is provided; blank = keep.

@@ -51,6 +51,7 @@ export default function SettingsPage() {
   const [login, setLogin] = useState("");
   const [key, setKey] = useState("");
   const [keySet, setKeySet] = useState(false);
+  const [folderId, setFolderId] = useState("");
   const [health, setHealth] = useState<HealthState | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -68,6 +69,7 @@ export default function SettingsPage() {
   const applySettings = useCallback((s: AppSettings) => {
     setLogin(s.streamtape_login || "");
     setKeySet(Boolean(s.streamtape_key));
+    setFolderId(s.streamtape_folder_id || "");
     setPostgresDsn(s.postgres_connection_string || "");
     setPersistenceConfigured(Boolean(s.postgres_connection_string));
   }, []);
@@ -207,6 +209,7 @@ export default function SettingsPage() {
         body: JSON.stringify({
           streamtape_login: login.trim(),
           streamtape_key: key.trim(),
+          streamtape_folder_id: folderId.trim(),
           postgres_connection_string: postgresDsn.trim(),
           admin_key: newAdminKey.trim(),
         }),
@@ -221,6 +224,7 @@ export default function SettingsPage() {
       setNewAdminKey("");
       setKey("");
       setKeySet(Boolean(s.streamtape_key));
+      setFolderId(s.streamtape_folder_id || "");
       setPostgresDsn(s.postgres_connection_string || "");
       setPersistenceConfigured(Boolean(s.postgres_connection_string));
       setSaved(true);
@@ -326,6 +330,13 @@ export default function SettingsPage() {
                 <label htmlFor="key" className={labelCls}>API / FTP password {keySet && <span className="text-success">· saved</span>}</label>
                 <input id="key" type="password" value={key} onChange={(e) => setKey(e.target.value)} placeholder={keySet ? "••••••••••••  (leave blank to keep)" : "API/FTP password"} className={inputCls} />
               </div>
+              <div className="sm:col-span-2">
+                <label htmlFor="folderId" className={labelCls}>Folder id <span className="normal-case text-faint">(optional)</span></label>
+                <input id="folderId" value={folderId} onChange={(e) => setFolderId(e.target.value)} placeholder="e.g. AbC123xYz…" spellCheck={false} className={inputCls} />
+                <p className="mt-1.5 text-xs leading-relaxed text-faint">
+                  When set, the library lists files from this folder only and new uploads are placed inside it. Find the id in the folder&apos;s StreamTape URL: <code className="rounded bg-sunken px-1 py-0.5 text-muted">streamtape.com/f/&lt;folder-id&gt;/…</code>. Leave blank to use the whole account.
+                </p>
+              </div>
             </div>
           </section>
 
@@ -336,7 +347,7 @@ export default function SettingsPage() {
               <span className="ml-1 font-normal normal-case text-muted">(required to save settings)</span>
             </h3>
             <p className="mt-1 text-xs leading-relaxed text-faint">
-              Where ALL settings on this page are stored, so they persist across browsers and incognito windows. It also powers the enriched catalog (posters, descriptions, durations). Setting{" "}<code className="rounded bg-sunken px-1 py-0.5 text-muted">DATABASE_URL</code>{" "}in env is the recommended way to make this cross-browser.
+              Where ALL settings on this page are stored, so they persist across browsers and incognito windows. (The video library itself comes straight from StreamTape — no database needed.) Setting{" "}<code className="rounded bg-sunken px-1 py-0.5 text-muted">DATABASE_URL</code>{" "}in env is the recommended way to make this cross-browser.
             </p>
             <div className="mt-4">
               <label htmlFor="postgresDsn" className={labelCls}>Connection string</label>
@@ -415,6 +426,7 @@ export default function SettingsPage() {
       <p className="mt-6 text-xs leading-relaxed text-faint">
         Settings are stored in PostgreSQL (server-side) and locked behind the admin key. Environment variables still take precedence over saved values:{" "}
         <code className="rounded bg-sunken px-1 py-0.5 text-muted">STREAMTAPE_LOGIN</code> / <code className="rounded bg-sunken px-1 py-0.5 text-muted">STREAMTAPE_KEY</code>,{" "}
+        <code className="rounded bg-sunken px-1 py-0.5 text-muted">STREAMTAPE_FOLDER_ID</code>,{" "}
         <code className="rounded bg-sunken px-1 py-0.5 text-muted">DATABASE_URL</code>, and <code className="rounded bg-sunken px-1 py-0.5 text-muted">JOHANKA_ADMIN_KEY</code>. Set{" "}
         <code className="rounded bg-sunken px-1 py-0.5 text-muted">DATABASE_URL</code> in env so a fresh browser (e.g. incognito) can reach the stored configuration. The key is kept in memory for the current tab only.
       </p>

@@ -40,7 +40,7 @@ export function AuthScreen() {
           Sign in to Johanka
         </h1>
         <p className="mt-1.5 text-center text-sm text-muted">
-          Your library, watch lists and settings, backed by PostgreSQL.
+          Your library, watch history and settings — synced when you sign in.
         </p>
 
         {firebaseEnabled ? (

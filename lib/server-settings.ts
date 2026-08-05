@@ -47,6 +47,10 @@ export function overlayEnv(db: AppSettings): AppSettings {
   return {
     streamtape_login: pick(process.env.STREAMTAPE_LOGIN, db.streamtape_login),
     streamtape_key: pick(process.env.STREAMTAPE_KEY, db.streamtape_key),
+    streamtape_folder_id: pick(
+      process.env.STREAMTAPE_FOLDER_ID,
+      db.streamtape_folder_id
+    ),
     postgres_connection_string: pick(
       process.env.DATABASE_URL || process.env.POSTGRES_URL,
       db.postgres_connection_string

@@ -11,15 +11,16 @@ import { formatBytes, clampUsername, stripExt } from "@/lib/format";
 import { boundaryFrom, parseMultipartStream } from "@/lib/multipart";
 import type { ParsedUpload } from "@/lib/multipart";
 import { loadEffectiveSettings } from "@/lib/server-settings";
-import { upsertVideo } from "@/lib/db";
 
 /*
   POST /api/upload — uploads a video to StreamTape via FTP.
 
-  Settings (StreamTape / Postgres) are resolved server-side from env + the
-  PostgreSQL settings table — the browser never sends credentials and the
-  client never holds config. The resulting video object is returned to the
-  client as a localStorage fallback catalog.
+  Settings (StreamTape creds + optional folder id) are resolved server-side
+  from env + the PostgreSQL settings table — the browser never sends
+  credentials and the client never holds config. When a folder id is
+  configured the file is uploaded into that folder; otherwise it lands in the
+  account root. The resulting video object is returned to the client as a
+  localStorage fallback catalog.
 
   THUMBNAILS come straight from StreamTape: they auto-generate a poster once
   the video finishes processing, exposed via /file/getsplash. We resolve that
@@ -85,8 +86,15 @@ export async function POST(req: NextRequest) {
     const description = (fields.description || "").trim() || null;
 
     // 1. Stream the file to StreamTape over FTP (reads from the temp file on
-    //    disk, so memory stays flat regardless of video size).
-    const uploaded = await uploadViaFtp(creds, videoFile.tempPath, safeName);
+    //    disk, so memory stays flat regardless of video size). When a folder
+    //    id is configured the file is uploaded into that folder so it shows
+    //    up in the library.
+    const uploaded = await uploadViaFtp(
+      creds,
+      videoFile.tempPath,
+      safeName,
+      settings.streamtapeFolderId
+    );
 
     // 2. Build the embed URL from the resolved file id.
     const embed = uploaded.fileid ? embedUrl(uploaded.fileid) : null;
@@ -103,31 +111,10 @@ export async function POST(req: NextRequest) {
       thumbnailUrl = await getThumbnailUrl(creds, uploaded.fileid);
     }
 
-    // 4. Optional: enrich the catalog in Postgres, keyed by StreamTape file id.
-    if (settings.postgresConnectionString && uploaded.fileid) {
-      try {
-        await upsertVideo(settings.postgresConnectionString, {
-          streamtape_id: uploaded.fileid,
-          title,
-          description,
-          filename: safeName,
-          size_bytes: videoFile.size,
-          duration_secs: null,
-          poster_url: thumbnailUrl,
-        });
-        console.log("[upload] catalog row upserted for", uploaded.fileid);
-      } catch (err) {
-        console.warn(
-          "[upload] Postgres upsert failed (continuing without enrichment):",
-          (err as Error).message
-        );
-      }
-    }
-
     console.log("[upload] done — thumbnail:", thumbnailUrl, "| embed:", embed);
 
-    // 5. Return the video object; the client keeps a localStorage copy as a
-    //    fallback catalog when no backend enrichment is configured.
+    // 4. Return the video object; the client keeps a localStorage copy as a
+    //    fallback catalog.
     const video = {
       id,
       streamtape_id: uploaded.fileid,

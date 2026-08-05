@@ -199,16 +199,20 @@ export interface StFile {
 }
 
 /*
-  List every file in the account's root folder via /file/listfolder.
+  List every file via /file/listfolder. When `folderId` is provided the files
+  are scoped to that folder; otherwise the account root is listed.
 
-  IMPORTANT: do NOT send the `folder` param. Omitting it lists the account
-  root; sending `folder=` (empty) returns `403 Not your folder`. The app
-  uploads everything to the root folder (see lib/ftp.ts), so this covers the
-  whole library. Pagination uses `per_page` + `page`.
+  IMPORTANT: only send the `folder` param when we have a real folder id — an
+  empty `folder=` returns `403 Not your folder`. Pagination uses `per_page` +
+  `page`.
 */
-export async function listFiles(creds: StreamtapeCreds): Promise<StFile[]> {
+export async function listFiles(
+  creds: StreamtapeCreds,
+  folderId?: string
+): Promise<StFile[]> {
   const files: StFile[] = [];
   const perPage = 100;
+  const folder = folderId?.trim() || "";
 
   // Failsafe cap: 20 pages x per_page = 2000 files at most.
   for (let page = 1; page <= 20; page++) {
@@ -216,6 +220,7 @@ export async function listFiles(creds: StreamtapeCreds): Promise<StFile[]> {
     auth(url.searchParams, creds);
     url.searchParams.set("per_page", String(perPage));
     url.searchParams.set("page", String(page));
+    if (folder) url.searchParams.set("folder", folder);
 
     const res = await stFetch(url.toString());
     if (!res.ok) {

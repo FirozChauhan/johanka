@@ -34,7 +34,7 @@ Browser ──upload──▶ Next.js server ──multipart──▶ StreamTape
                          │                              │
                          │  thumbnail via /file/getsplash │  returns file id + embed URL
                          ▼                              ▼
-               PostgreSQL (settings + metadata) ◀───────┘
+               PostgreSQL (settings + users) ◀──────────┘
                          │
               ┌──────────┴───────────┐
               ▼                      ▼
@@ -47,10 +47,11 @@ Browser ──upload──▶ Next.js server ──multipart──▶ StreamTape
   (`/file/getsplash`), so the server keeps no media files at all.
 - **Library**: the home page lists files straight from your StreamTape account
   via `file/listfolder` — no local database or localStorage catalog needed.
-  Repeat visits hit a short server-side cache; titles and sizes are derived
-  from each file's metadata on StreamTape.
-- **Settings**: the `/settings` config (StreamTape credentials, the Postgres
-  DSN) is saved server-side in a PostgreSQL `settings` table, so
+  With a **folder id** configured it lists only that folder's files. Repeat
+  visits hit a short server-side cache; titles and sizes are derived from each
+  file's metadata on StreamTape.
+- **Settings**: the `/settings` config (StreamTape credentials, the folder id,
+  the Postgres DSN) is saved server-side in a PostgreSQL `settings` table, so
   it persists across browsers and incognito windows — not per-browser
   localStorage. Env vars still take precedence.
 - **Playback**: the watch page embeds StreamTape's player via iframe — no
@@ -60,8 +61,9 @@ Browser ──upload──▶ Next.js server ──multipart──▶ StreamTape
 ## Features
 
 - 🎬 **Upload** via drag-and-drop or file picker (mp4, webm, mkv, mov, …)
-- ☁️ **Live library** — everything in your StreamTape account appears automatically;
-  add files anywhere (FTP, the website, another app) and they show up here
+- ☁️ **Live library** — everything in your StreamTape account appears automatically
+  (or just one folder when a **folder id** is set); add files anywhere (FTP, the
+  website, another app) and they show up here
 - 🖼️ **Auto thumbnails** — StreamTape generates a poster after processing,
   no ffmpeg or image hosting needed
 - 📺 **Streaming** through StreamTape's embeddable player
@@ -99,9 +101,9 @@ npm run dev
 
 Open <http://localhost:3000>. The first time, go to **/settings** and add your
 StreamTape credentials (see below), then upload a video from **/upload**.
-Settings are stored in PostgreSQL (the `settings` and `videos` tables are
-created automatically on first use), so they stay the same in every browser —
-including incognito.
+Settings are stored in PostgreSQL (the `settings` table is created
+automatically on first use; a `users` table is added if you enable Google
+sign-in), so they stay the same in every browser — including incognito.
 
 ---
 
@@ -109,8 +111,9 @@ including incognito.
 
 Johanka runs anywhere Node 20+ runs — no ffmpeg, no image storage, no
 persistent filesystem needed for media (thumbnails are hosted by StreamTape).
-A **PostgreSQL** database is recommended for persistent settings and metadata
-(without one, the app still works but settings fall back to the browser).
+A **PostgreSQL** database is recommended for persistent settings (without one,
+the app still works but settings fall back to env vars / the browser). The
+video library itself never needs a database — it comes straight from StreamTape.
 
 ### Docker (recommended)
 
@@ -167,7 +170,7 @@ large uploads.
 johanka/
 ├─ app/
 │  ├─ api/
-│  │  ├─ upload/route.ts            POST   upload file -> StreamTape + DB
+│  │  ├─ upload/route.ts            POST   upload file -> StreamTape (folder-aware)
 │  │  ├─ settings/route.ts          GET/POST  read/save server-persisted settings
 │  │  ├─ videos/[id]/route.ts       DELETE  delete StreamTape file
 │  │  ├─ videos/[id]/direct/route.ts GET   resolve StreamTape direct mp4
@@ -182,7 +185,7 @@ johanka/
 │  └─ globals.css                   design tokens (@theme) + base styles
 ├─ components/                      Nav, VideoCard/Grid, Player, icons, …
 ├─ lib/
-│  ├─ db.ts                         PostgreSQL pool + videos/settings tables
+│  ├─ db.ts                         PostgreSQL pool + settings/users tables
 │  ├─ settings.ts                   settings resolution (env over DB)
 │  ├─ server-settings.ts            server-only settings + admin-key checks
 │  ├─ admin-auth.ts                 in-memory admin key for the browser session
@@ -196,7 +199,7 @@ johanka/
 
 | Method | Route                      | Purpose                                  |
 |--------|----------------------------|------------------------------------------|
-| POST   | `/api/upload`              | multipart upload → StreamTape → DB       |
+| POST   | `/api/upload`              | multipart upload → StreamTape (folder-aware) |
 | GET    | `/api/settings`            | read server-persisted settings           |
 | POST   | `/api/settings`            | save server-persisted settings (DB)      |
 | GET    | `/api/streamtape/files`    | list library from StreamTape account     |
@@ -215,15 +218,15 @@ The codebase is intentionally small and flat so it's easy to extend.
 `@theme { ... }`. Change `--color-accent`, `--color-base`, etc. and the whole
 app updates.
 
-**Add a field to videos:** add the column in `lib/db.ts` (`ensureVideosTable`),
-add it to the `Video` type in `lib/types.ts`, map it in the API route that
-builds videos, then use it in the UI. Tables are created automatically with
-`CREATE TABLE IF NOT EXISTS`; to alter existing columns, run an `ALTER TABLE`
-or recreate the DB.
+**Add a field to videos:** video metadata is not stored in a database — it
+comes from StreamTape. The fields a card shows are assembled in
+`app/api/streamtape/files/route.ts` from `lib/streamtape.ts` responses; extend
+the `Video` type in `lib/types.ts` and map it there, then use it in the UI.
 
 **Add a setting:** add the column to the `settings` table in `lib/db.ts`
-(`ensureSettingsTable`), add it to `AppSettings` in `lib/types.ts`, and surface
-it in `app/api/settings/route.ts` (read + save) and `app/settings/page.tsx`.
+(`ensureSettingsTable` + an `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` guard),
+add it to `AppSettings` in `lib/types.ts`, and surface it in
+`app/api/settings/route.ts` (read + save) and `app/settings/page.tsx`.
 
 **Use a different storage backend:** replace `lib/streamtape.ts` with another
 provider (e.g. Backblaze B2, S3) keeping the same exported functions
@@ -272,7 +275,13 @@ streaming, and thumbnails powered by the StreamTape API.
 2. Go to **streamtape.com → Account** and copy your **API/FTP Username** and
    **API/FTP Password** (StreamTape uses one username + password for both FTP
    and its API; the API refers to them as `login` and `key`).
-3. Add them **either**:
+3. **(Optional) Scope the library to one folder.** In StreamTape, open the
+   folder you want to expose and copy its id from the URL
+   (`streamtape.com/f/<folder-id>/…`). Add it in `/settings` or as the
+   `STREAMTAPE_FOLDER_ID` env var. The library then lists only that folder's
+   files, and new uploads are placed inside it. Leave it blank to use the
+   whole account.
+4. Add your credentials **either**:
    - in the app at **`/settings`** (persisted to PostgreSQL, editable at
      runtime, follows you into incognito), **or**
    - via environment variables (recommended for production):
@@ -281,6 +290,7 @@ streaming, and thumbnails powered by the StreamTape API.
      # .env (gitignored)
      STREAMTAPE_LOGIN=your_api_ftp_username
      STREAMTAPE_KEY=your_api_ftp_password
+     STREAMTAPE_FOLDER_ID=optional_folder_id
      ```
 
 Env vars take precedence over anything saved in the UI, so you can lock
@@ -405,22 +415,18 @@ poster when each video finishes processing, and the app resolves it via their
 `thumb.tapecontent.net` that's hotlinked straight into the UI). While a video
 is still converting, cards show a tasteful gradient placeholder instead.
 
-One optional integration makes metadata stick:
+One optional integration makes settings stick:
 
-- **PostgreSQL** (`DATABASE_URL`) — holds **everything the server needs to
-  remember**:
-  - the `settings` table — the operator config from `/settings` (StreamTape
-    credentials, the DSN itself), so it's the same in every browser and
-    **survives incognito**;
-  - the `videos` table — enriched metadata (custom titles, descriptions,
-    thumbnails) keyed by StreamTape file id. Both tables are created
-    automatically on first use and merge with the raw StreamTape listing on
-    every page load.
+- **PostgreSQL** (`DATABASE_URL`) — holds the `settings` table: the operator
+  config from `/settings` (StreamTape credentials, the folder id, the DSN
+  itself), so it's the same in every browser and **survives incognito**.
+  (When Google sign-in is enabled, a `users` table is added too.) The table is
+  created automatically on first use.
 
 Configure it at runtime in **/settings** (persisted server-side) or via env
 vars in production — env vars always win. Everything degrades gracefully: no
-PostgreSQL → the raw StreamTape listing is used (thumbnails still work, since
-they come from StreamTape) and settings fall back to the current browser.
+PostgreSQL → settings fall back to env vars / the current browser, while the
+library keeps working since it comes straight from StreamTape.
 
 > **Incognito tip:** for settings to appear in a browser that has never visited
 > `/settings`, set `DATABASE_URL` in your environment (`.env` /

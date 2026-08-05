@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
 import { listFiles, embedUrl, getThumbnailUrl } from "@/lib/streamtape";
 import type { StreamtapeCreds } from "@/lib/streamtape";
-import { fetchVideosMeta } from "@/lib/db";
-import type { DbVideoMeta } from "@/lib/db";
 import { formatBytes, stripExt } from "@/lib/format";
 import type { Video } from "@/lib/types";
 import { loadEffectiveSettings } from "@/lib/server-settings";
@@ -10,12 +8,15 @@ import { loadEffectiveSettings } from "@/lib/server-settings";
 /*
   GET /api/streamtape/files
 
-  PUBLIC: lists the library straight from the StreamTape account. Credentials
-  are resolved server-side (env vars win over the PostgreSQL settings table),
-  so the browser never holds config and the page is identical for every visitor.
+  PUBLIC: lists the library straight from the StreamTape account. When a
+  StreamTape folder id is configured (settings / STREAMTAPE_FOLDER_ID env),
+  only that folder's files are listed. Credentials are resolved server-side
+  (env vars win over the PostgreSQL settings table), so the browser never
+  holds config and the page is identical for every visitor.
 
-  Results are cached in memory for a short TTL so repeated page loads don't
-  hammer the StreamTape API.
+  Video metadata is NOT stored in a database — everything comes directly from
+  StreamTape (name, size, created date, thumbnail). Results are cached in
+  memory for a short TTL so repeated page loads don't hammer the API.
 */
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -83,46 +84,29 @@ export async function GET() {
   // Optional Postgres enrichment (env vars win over the /settings value).
   const postgresDsn = settings.postgresConnectionString;
 
-  const cacheKey = `${creds.streamtape_login}:${creds.streamtape_key}:${postgresDsn ?? ""}`;
+  const cacheKey = `${creds.streamtape_login}:${creds.streamtape_key}:${settings.streamtapeFolderId ?? ""}:${postgresDsn ?? ""}`;
   const hit = cache.get(cacheKey);
   if (hit && Date.now() - hit.at < CACHE_TTL_MS) {
     return NextResponse.json({ configured: true, videos: hit.videos, cached: true });
   }
 
   try {
-    const files = await listFiles(creds);
+    const files = await listFiles(creds, settings.streamtapeFolderId);
 
     // Thumbnails: StreamTape generates a poster after processing, so resolve
-    // the splash URL for every file (cached). This is the primary thumb source
-    // — DB poster_url is only a fallback for legacy rows whose splash fails.
+    // the splash URL for every file (cached). This is the only thumb source.
     const thumbs = await resolveThumbnails(creds, files.map((f) => f.fileid));
 
-    // Attach enriched metadata (posters, custom titles, durations) keyed by
-    // StreamTape file id when a database is configured. Degrades to a raw
-    // listing otherwise.
-    let meta: Map<string, DbVideoMeta> | null = null;
-    if (postgresDsn) {
-      try {
-        meta = await fetchVideosMeta(postgresDsn, files.map((f) => f.fileid));
-      } catch (err) {
-        console.warn(
-          "[files] Postgres enrichment unavailable — continuing with the raw listing:",
-          (err as Error).message
-        );
-      }
-    }
-
     const videos: Video[] = files.map((f) => {
-      const m = meta?.get(f.fileid);
       return {
         id: f.fileid,
         streamtape_id: f.fileid,
-        title: m?.title?.trim() || prettyTitle(f.name),
-        description: m?.description ?? null,
+        title: prettyTitle(f.name),
+        description: null,
         filename: f.name,
         size: f.size != null ? formatBytes(f.size) : null,
-        duration: m?.duration_secs ?? null,
-        thumbnail: thumbs.get(f.fileid) ?? m?.poster_url ?? null,
+        duration: null,
+        thumbnail: thumbs.get(f.fileid) ?? null,
         status: "ready",
         embed_url: embedUrl(f.fileid),
         direct_url: null,

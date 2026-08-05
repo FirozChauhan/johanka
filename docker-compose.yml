@@ -17,7 +17,10 @@ services:
       # Option B: leave blank and configure them in the /settings UI instead.
       STREAMTAPE_LOGIN: ${STREAMTAPE_LOGIN:-}
       STREAMTAPE_KEY: ${STREAMTAPE_KEY:-}
-      # Optional: catalog enrichment (thumbnails come from StreamTape itself).
+      # Optional: scope the library to a single StreamTape folder (uploads go
+      # into it too). Leave blank for the whole account.
+      STREAMTAPE_FOLDER_ID: ${STREAMTAPE_FOLDER_ID:-}
+      # Optional: persistent settings storage (thumbnails come from StreamTape).
       DATABASE_URL: ${DATABASE_URL:-}
       # Optional: Google sign-in (Firebase). NEXT_PUBLIC_* are inlined at build
       # time; the FIREBASE_* service-account fields are read at runtime.
