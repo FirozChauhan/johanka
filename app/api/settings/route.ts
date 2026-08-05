@@ -29,8 +29,8 @@ import type { AppSettings } from "@/lib/types";
     - Key configured         -> GET/POST require `Authorization: Bearer <key>`
       (or ?key=). Wrong/missing key returns 401 { locked: true }.
 
-  Env vars (STREAMTAPE_*, CLOUDINARY_*, DATABASE_URL) always win over values
-  stored in the database.
+  Env vars (STREAMTAPE_*, DATABASE_URL) always win over values stored in the
+  database.
 */
 
 export const runtime = "nodejs";
@@ -121,13 +121,10 @@ export async function POST(req: NextRequest) {
     const next: AppSettings = {
       ...existing,
       streamtape_login: pick(body.streamtape_login, existing.streamtape_login),
-      cloudinary_cloud_name: pick(body.cloudinary_cloud_name, existing.cloudinary_cloud_name),
       postgres_connection_string: dsn,
     };
     // Secrets are only replaced when a new value is provided; blank = keep.
     if (body.streamtape_key?.trim()) next.streamtape_key = body.streamtape_key.trim();
-    if (body.cloudinary_api_key?.trim()) next.cloudinary_api_key = body.cloudinary_api_key.trim();
-    if (body.cloudinary_api_secret?.trim()) next.cloudinary_api_secret = body.cloudinary_api_secret.trim();
 
     await saveSettingsToDb(dsn, next);
 

@@ -4,11 +4,10 @@ import { useState } from "react";
 import { GradientThumb } from "./GradientThumb";
 
 /*
-  A thumbnail that falls back to a gradient placeholder when the image file is
-  missing or fails to load. Render's filesystem is ephemeral — thumbnails in
-  /public/thumbs are wiped on every redeploy/restart even though the video
-  metadata (which lives in the browser) still references them. Without this
-  fallback those stale references would render as broken images.
+  A thumbnail that falls back to a gradient placeholder when the image is
+  missing or fails to load. Thumbnails come from StreamTape (/file/getsplash)
+  and only exist once a video finishes processing, so this fallback keeps
+  freshly-uploaded or still-converting videos looking clean instead of broken.
 */
 export function Thumb({
   src,

@@ -15,7 +15,9 @@ export interface Video {
   size: string | null;
   /** Duration in seconds, if known */
   duration: number | null;
-  /** Poster / thumbnail image URL (relative path to /public) */
+  /** Poster / thumbnail image URL. Comes straight from StreamTape
+   * (/file/getsplash, e.g. https://thumb.tapecontent.net/thumb/<id>/thumb.jpg)
+   * and appears once StreamTape finishes processing the video. */
   thumbnail: string | null;
   status: VideoStatus;
   /** StreamTape iframe embed URL */
@@ -30,10 +32,6 @@ export interface Video {
 export interface AppSettings {
   streamtape_login?: string;
   streamtape_key?: string;
-  /** Cloudinary cloud name / public cloud id. */
-  cloudinary_cloud_name?: string;
-  cloudinary_api_key?: string;
-  cloudinary_api_secret?: string;
   /** Optional PostgreSQL connection string. Persists /settings config and
    * enriches the catalog. */
   postgres_connection_string?: string;

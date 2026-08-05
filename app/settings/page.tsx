@@ -59,13 +59,6 @@ export default function SettingsPage() {
   const [diagLoading, setDiagLoading] = useState(false);
   const [persistenceConfigured, setPersistenceConfigured] = useState(false);
 
-  // Cloudinary (hosted posters) — optional.
-  const [cloudName, setCloudName] = useState("");
-  const [cloudKey, setCloudKey] = useState("");
-  const [cloudKeySet, setCloudKeySet] = useState(false);
-  const [cloudSecret, setCloudSecret] = useState("");
-  const [cloudSecretSet, setCloudSecretSet] = useState(false);
-
   // PostgreSQL — the server-side settings store + optional catalog enrichment.
   const [postgresDsn, setPostgresDsn] = useState("");
 
@@ -75,9 +68,6 @@ export default function SettingsPage() {
   const applySettings = useCallback((s: AppSettings) => {
     setLogin(s.streamtape_login || "");
     setKeySet(Boolean(s.streamtape_key));
-    setCloudName(s.cloudinary_cloud_name || "");
-    setCloudKeySet(Boolean(s.cloudinary_api_key));
-    setCloudSecretSet(Boolean(s.cloudinary_api_secret));
     setPostgresDsn(s.postgres_connection_string || "");
     setPersistenceConfigured(Boolean(s.postgres_connection_string));
   }, []);
@@ -217,9 +207,6 @@ export default function SettingsPage() {
         body: JSON.stringify({
           streamtape_login: login.trim(),
           streamtape_key: key.trim(),
-          cloudinary_cloud_name: cloudName.trim(),
-          cloudinary_api_key: cloudKey.trim(),
-          cloudinary_api_secret: cloudSecret.trim(),
           postgres_connection_string: postgresDsn.trim(),
           admin_key: newAdminKey.trim(),
         }),
@@ -234,10 +221,6 @@ export default function SettingsPage() {
       setNewAdminKey("");
       setKey("");
       setKeySet(Boolean(s.streamtape_key));
-      setCloudKey("");
-      setCloudKeySet(Boolean(s.cloudinary_api_key));
-      setCloudSecret("");
-      setCloudSecretSet(Boolean(s.cloudinary_api_secret));
       setPostgresDsn(s.postgres_connection_string || "");
       setPersistenceConfigured(Boolean(s.postgres_connection_string));
       setSaved(true);
@@ -346,26 +329,6 @@ export default function SettingsPage() {
             </div>
           </section>
 
-          {/* Cloudinary */}
-          <section className="border-b border-line py-6">
-            <h3 className="text-sm font-semibold uppercase tracking-widest text-faint">Cloudinary</h3>
-            <p className="mt-1 text-xs text-faint">Optional hosted poster thumbnails — leave blank to keep local frames.</p>
-            <div className="mt-4 grid gap-4 sm:grid-cols-2">
-              <div className="sm:col-span-2">
-                <label htmlFor="cloudName" className={labelCls}>Cloud name</label>
-                <input id="cloudName" value={cloudName} onChange={(e) => setCloudName(e.target.value)} placeholder="your-cloud-name" spellCheck={false} className={inputCls} />
-              </div>
-              <div>
-                <label htmlFor="cloudKey" className={labelCls}>API key {cloudKeySet && <span className="text-success">· saved</span>}</label>
-                <input id="cloudKey" type="password" value={cloudKey} onChange={(e) => setCloudKey(e.target.value)} placeholder={cloudKeySet ? "••••••••••••  (leave blank to keep)" : "API key"} className={inputCls} />
-              </div>
-              <div>
-                <label htmlFor="cloudSecret" className={labelCls}>API secret {cloudSecretSet && <span className="text-success">· saved</span>}</label>
-                <input id="cloudSecret" type="password" value={cloudSecret} onChange={(e) => setCloudSecret(e.target.value)} placeholder={cloudSecretSet ? "••••••••••••  (leave blank to keep)" : "API secret"} className={inputCls} />
-              </div>
-            </div>
-          </section>
-
           {/* PostgreSQL */}
           <section className="border-b border-line py-6">
             <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-faint">
@@ -452,7 +415,6 @@ export default function SettingsPage() {
       <p className="mt-6 text-xs leading-relaxed text-faint">
         Settings are stored in PostgreSQL (server-side) and locked behind the admin key. Environment variables still take precedence over saved values:{" "}
         <code className="rounded bg-sunken px-1 py-0.5 text-muted">STREAMTAPE_LOGIN</code> / <code className="rounded bg-sunken px-1 py-0.5 text-muted">STREAMTAPE_KEY</code>,{" "}
-        <code className="rounded bg-sunken px-1 py-0.5 text-muted">CLOUDINARY_CLOUD_NAME</code> / <code className="rounded bg-sunken px-1 py-0.5 text-muted">CLOUDINARY_API_KEY</code> / <code className="rounded bg-sunken px-1 py-0.5 text-muted">CLOUDINARY_API_SECRET</code>,{" "}
         <code className="rounded bg-sunken px-1 py-0.5 text-muted">DATABASE_URL</code>, and <code className="rounded bg-sunken px-1 py-0.5 text-muted">JOHANKA_ADMIN_KEY</code>. Set{" "}
         <code className="rounded bg-sunken px-1 py-0.5 text-muted">DATABASE_URL</code> in env so a fresh browser (e.g. incognito) can reach the stored configuration. The key is kept in memory for the current tab only.
       </p>

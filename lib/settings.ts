@@ -12,9 +12,6 @@ import type { AppSettings } from "./types";
 export interface ResolvedSettings {
   streamtape_login?: string;
   streamtape_key?: string;
-  cloudinaryCloudName?: string;
-  cloudinaryApiKey?: string;
-  cloudinaryApiSecret?: string;
   postgresConnectionString?: string;
 }
 
@@ -29,15 +26,6 @@ export function resolveSettings(client?: Partial<AppSettings>): ResolvedSettings
   return {
     streamtape_login: pick(process.env.STREAMTAPE_LOGIN, client?.streamtape_login),
     streamtape_key: pick(process.env.STREAMTAPE_KEY, client?.streamtape_key),
-    cloudinaryCloudName: pick(
-      process.env.CLOUDINARY_CLOUD_NAME,
-      client?.cloudinary_cloud_name
-    ),
-    cloudinaryApiKey: pick(process.env.CLOUDINARY_API_KEY, client?.cloudinary_api_key),
-    cloudinaryApiSecret: pick(
-      process.env.CLOUDINARY_API_SECRET,
-      client?.cloudinary_api_secret
-    ),
     postgresConnectionString: pick(
       process.env.DATABASE_URL || process.env.POSTGRES_URL,
       client?.postgres_connection_string

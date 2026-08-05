@@ -7,8 +7,8 @@ import type { AppSettings } from "./types";
   Two things live here:
   1. The video catalog — enriched metadata (posters, descriptions, durations)
      keyed by StreamTape file id.
-  2. App settings — the operator config (StreamTape / Cloudinary / the DSN
-     itself) persisted server-side so it survives across browsers and incognito
+  2. App settings — the operator config (StreamTape / the DSN itself)
+     persisted server-side so it survives across browsers and incognito
      sessions (no more localStorage-only settings).
 
   Everything degrades gracefully: if no connection string is configured the app
@@ -53,7 +53,6 @@ export async function ensureVideosTable(pool: Pool): Promise<void> {
       created_at       BIGINT,
       duration_secs    INTEGER,
       poster_url       TEXT,
-      poster_public_id TEXT,
       updated_at       BIGINT
     );
   `);
@@ -67,7 +66,6 @@ export interface VideoUpsert {
   size_bytes?: number | null;
   duration_secs?: number | null;
   poster_url?: string | null;
-  poster_public_id?: string | null;
 }
 
 export async function upsertVideo(
@@ -79,8 +77,8 @@ export async function upsertVideo(
   await pool.query(
     `INSERT INTO videos
        (streamtape_id, title, description, filename, size_bytes, duration_secs,
-        poster_url, poster_public_id, updated_at)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+        poster_url, updated_at)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
      ON CONFLICT (streamtape_id) DO UPDATE SET
        title            = EXCLUDED.title,
        description      = EXCLUDED.description,
@@ -88,7 +86,6 @@ export async function upsertVideo(
        size_bytes       = EXCLUDED.size_bytes,
        duration_secs    = EXCLUDED.duration_secs,
        poster_url       = EXCLUDED.poster_url,
-       poster_public_id = EXCLUDED.poster_public_id,
        updated_at       = EXCLUDED.updated_at`,
     [
       meta.streamtape_id,
@@ -98,7 +95,6 @@ export async function upsertVideo(
       meta.size_bytes ?? null,
       meta.duration_secs ?? null,
       meta.poster_url ?? null,
-      meta.poster_public_id ?? null,
       Math.floor(Date.now() / 1000),
     ]
   );
@@ -145,9 +141,6 @@ export async function ensureSettingsTable(pool: Pool): Promise<void> {
       id                        BOOLEAN PRIMARY KEY DEFAULT TRUE,
       streamtape_login          TEXT,
       streamtape_key            TEXT,
-      cloudinary_cloud_name     TEXT,
-      cloudinary_api_key        TEXT,
-      cloudinary_api_secret     TEXT,
       postgres_connection_string TEXT,
       admin_key_sha             TEXT,
       updated_at                BIGINT,
@@ -171,9 +164,6 @@ export async function loadSettingsFromDb(
   return {
     streamtape_login: r.streamtape_login ?? undefined,
     streamtape_key: r.streamtape_key ?? undefined,
-    cloudinary_cloud_name: r.cloudinary_cloud_name ?? undefined,
-    cloudinary_api_key: r.cloudinary_api_key ?? undefined,
-    cloudinary_api_secret: r.cloudinary_api_secret ?? undefined,
     postgres_connection_string: r.postgres_connection_string ?? undefined,
   };
 }
@@ -186,24 +176,16 @@ export async function saveSettingsToDb(
   await ensureSettingsTable(pool);
   await pool.query(
     `INSERT INTO settings
-       (id, streamtape_login, streamtape_key, cloudinary_cloud_name,
-        cloudinary_api_key, cloudinary_api_secret, postgres_connection_string,
-        updated_at)
-     VALUES (TRUE, $1,$2,$3,$4,$5,$6,$7)
+       (id, streamtape_login, streamtape_key, postgres_connection_string, updated_at)
+     VALUES (TRUE, $1,$2,$3,$4)
      ON CONFLICT (id) DO UPDATE SET
        streamtape_login           = EXCLUDED.streamtape_login,
        streamtape_key             = EXCLUDED.streamtape_key,
-       cloudinary_cloud_name      = EXCLUDED.cloudinary_cloud_name,
-       cloudinary_api_key         = EXCLUDED.cloudinary_api_key,
-       cloudinary_api_secret      = EXCLUDED.cloudinary_api_secret,
        postgres_connection_string = EXCLUDED.postgres_connection_string,
        updated_at                 = EXCLUDED.updated_at`,
     [
       settings.streamtape_login ?? null,
       settings.streamtape_key ?? null,
-      settings.cloudinary_cloud_name ?? null,
-      settings.cloudinary_api_key ?? null,
-      settings.cloudinary_api_secret ?? null,
       settings.postgres_connection_string ?? null,
       Math.floor(Date.now() / 1000),
     ]

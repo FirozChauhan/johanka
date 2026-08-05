@@ -12,9 +12,9 @@ import type { Readable } from "node:stream";
   that OOM-kills the process for anything but tiny files.
 
   This parser instead consumes the request body as a stream: it buffers only
-  the tiny text fields in memory and writes the (potentially huge) `file` /
-  `thumbnail` parts straight to disk as the bytes arrive. Peak memory stays
-  bounded (~a few KB of lookahead) regardless of video size.
+  the tiny text fields in memory and writes the (potentially huge) `file` part
+  straight to disk as the bytes arrive. Peak memory stays bounded (~a few KB of
+  lookahead) regardless of video size.
 */
 
 const HEADER_END = Buffer.from("\r\n\r\n");
@@ -35,8 +35,6 @@ export interface ParsedUpload {
   fields: Record<string, string>;
   /** The video part (field name "file"), if present. */
   file: MultipartFilePart | null;
-  /** The poster part (field name "thumbnail"), if present. */
-  thumbnail: MultipartFilePart | null;
   /** Deletes all temp files written during parsing. */
   cleanup: () => void;
 }
@@ -91,7 +89,6 @@ export async function parseMultipartStream(
 
   const fields: Record<string, string> = {};
   let file: MultipartFilePart | null = null;
-  let thumbnail: MultipartFilePart | null = null;
   const tempPaths: string[] = [];
   const cleanup = () => {
     for (const p of tempPaths) {
@@ -152,7 +149,6 @@ export async function parseMultipartStream(
         contentType,
       };
       if (fieldName === "file") file = part;
-      else if (fieldName === "thumbnail") thumbnail = part;
       writeDone.push(
         new Promise<void>((res) => {
           ws.on("finish", () => res());
@@ -255,6 +251,6 @@ export async function parseMultipartStream(
     stream.on("error", reject);
   });
 
-  return { fields, file, thumbnail, cleanup };
+  return { fields, file, cleanup };
 }
 

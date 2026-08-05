@@ -12,21 +12,12 @@ services:
     restart: unless-stopped
     ports:
       - "3000:3000"
-    volumes:
-      # Poster frames + any runtime data (persists across restarts). Settings
-      # and metadata live in PostgreSQL (DATABASE_URL), not on disk.
-      - johanka-data:/app/data
-      # Auto-generated poster frames (persists across restarts)
-      - johanka-thumbs:/app/public/thumbs
     environment:
       # Option A: set credentials via env (recommended for production).
       # Option B: leave blank and configure them in the /settings UI instead.
       STREAMTAPE_LOGIN: ${STREAMTAPE_LOGIN:-}
       STREAMTAPE_KEY: ${STREAMTAPE_KEY:-}
-      # Optional: hosted posters (Cloudinary) + catalog enrichment (PostgreSQL).
-      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
-      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
-      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
+      # Optional: catalog enrichment (thumbnails come from StreamTape itself).
       DATABASE_URL: ${DATABASE_URL:-}
       # Optional: Google sign-in (Firebase). NEXT_PUBLIC_* are inlined at build
       # time; the FIREBASE_* service-account fields are read at runtime.
@@ -42,7 +33,3 @@ services:
       timeout: 5s
       retries: 3
       start_period: 20s
-
-volumes:
-  johanka-data:
-  johanka-thumbs:

@@ -47,15 +47,6 @@ export function overlayEnv(db: AppSettings): AppSettings {
   return {
     streamtape_login: pick(process.env.STREAMTAPE_LOGIN, db.streamtape_login),
     streamtape_key: pick(process.env.STREAMTAPE_KEY, db.streamtape_key),
-    cloudinary_cloud_name: pick(
-      process.env.CLOUDINARY_CLOUD_NAME,
-      db.cloudinary_cloud_name
-    ),
-    cloudinary_api_key: pick(process.env.CLOUDINARY_API_KEY, db.cloudinary_api_key),
-    cloudinary_api_secret: pick(
-      process.env.CLOUDINARY_API_SECRET,
-      db.cloudinary_api_secret
-    ),
     postgres_connection_string: pick(
       process.env.DATABASE_URL || process.env.POSTGRES_URL,
       db.postgres_connection_string

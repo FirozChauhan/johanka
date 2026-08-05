@@ -2,9 +2,9 @@
 //
 // This is a fallback/offline layer: it stores ONLY the video catalog fallback
 // (for when no StreamTape credentials are configured or the remote fetch
-// fails). App settings (StreamTape / Cloudinary / the Postgres DSN) and the
-// admin key are handled server-side (PostgreSQL via /api/settings) and never
-// touch localStorage.
+// fails). App settings (StreamTape / the Postgres DSN) and the admin key are
+// handled server-side (PostgreSQL via /api/settings) and never touch
+// localStorage.
 //
 // Caveats (intentional): localStorage is per-browser and per-device, and is
 // lost if the user clears site data. Server-rendered output can't read it, so

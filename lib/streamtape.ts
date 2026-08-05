@@ -301,6 +301,39 @@ export async function getDirectLink(creds: StreamtapeCreds, fileid: string): Pro
   return dlJson.result?.direct_link ?? null;
 }
 
+/*
+  Resolve StreamTape's auto-generated thumbnail URL for `fileid` via the
+  /file/getsplash endpoint.
+
+  StreamTape generates a poster after the video finishes processing
+  ("converting"), so this may return null for very recent uploads — callers
+  should degrade gracefully and re-resolve later (the library listing does
+  this for every file on each refresh). The returned value is a plain public
+  image URL (e.g. https://thumb.tapecontent.net/thumb/<fileid>/thumb.jpg)
+  that can be hotlinked straight into an <img>.
+*/
+export async function getThumbnailUrl(
+  creds: StreamtapeCreds,
+  fileid: string
+): Promise<string | null> {
+  const url = new URL("/file/getsplash", API_BASE);
+  auth(url.searchParams, creds);
+  url.searchParams.set("file", fileid);
+
+  try {
+    const res = await stFetch(url.toString());
+    if (!res.ok) return null;
+    const json = (await res.json()) as StResult<string>;
+    if (json.status !== 200 || typeof json.result !== "string") return null;
+    const thumb = json.result.trim();
+    return /^https?:\/\//i.test(thumb) ? thumb : null;
+  } catch (err) {
+    // Not fatal — the UI falls back to a gradient placeholder.
+    console.warn("[streamtape] getsplash failed for", fileid, ":", (err as Error).message);
+    return null;
+  }
+}
+
 export interface FileInfo { name?: string; size?: number; created?: number; }
 
 export async function getFileInfo(creds: StreamtapeCreds, fileid: string): Promise<FileInfo | null> {

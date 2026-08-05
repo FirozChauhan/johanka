@@ -1,10 +1,7 @@
 # ---- Build stage -----------------------------------------------------------
 # Johanka ships as a self-hosted app, so we produce a standalone Next.js image.
-# The runtime needs ffmpeg/ffprobe (for auto thumbnails) and a persistent
-# volume for SQLite + generated posters.
-
-# Use a slim Debian image because we need apt for ffmpeg. The bookworm-slim
-# base keeps the image small while still giving us apt.
+# Thumbnails come from StreamTape itself (no ffmpeg needed); the runtime only
+# needs wget for the healthcheck.
 FROM node:20-bookworm-slim AS builder
 
 WORKDIR /app
@@ -33,9 +30,10 @@ FROM node:20-bookworm-slim AS runner
 
 WORKDIR /app
 
-# Runtime deps: ffmpeg for poster extraction, wget for healthchecks.
+# Runtime dep: wget for the healthcheck. (No ffmpeg — thumbnails come from
+# StreamTape, so the image stays small.)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    ffmpeg wget \
+    wget \
     && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=production
@@ -47,10 +45,6 @@ ENV NODE_OPTIONS=--max-old-space-size=4096
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
-
-# Persistent data lives here (SQLite db + generated thumbnails).
-RUN mkdir -p /app/data /app/public/thumbs
-VOLUME ["/app/data", "/app/public/thumbs"]
 
 EXPOSE 3000
 
